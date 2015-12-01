@@ -1,0 +1,1 @@
+/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/c++    -std=c++11 -lfftw3 -Wl,-search_paths_first -Wl,-headerpad_max_install_names  CMakeFiles/cortex.dir/main.cpp.o CMakeFiles/cortex.dir/utils.cpp.o  -o cortex  
