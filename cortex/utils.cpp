@@ -53,7 +53,6 @@ void Simulation::initData() {
     SOFT = true;
     GLOB = true;
 
-//    dt = 0.25;
     dt = 0.25;
     T = 10000 / dt;
     before = T;
