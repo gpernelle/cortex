@@ -19,6 +19,7 @@ typedef std::vector<int>::iterator iter;
 class Simulation
 {
 public:
+    string PLAST_RULE;
     bool SPINDLE_LOWPASS;
     bool COMPUTE_PLAST;
     bool MIN_PLAST_THRESH;
@@ -51,6 +52,9 @@ public:
     double tau_syn;
     double GammaII;
 
+    double LTD; //only used for writing data name
+    double LTP; //only used for writing data name
+
     double GammaIE;
     double GammaEE ;
     double GammaEI ;
@@ -65,6 +69,7 @@ public:
 
     double gamma_c;
     double TImean;
+    double TEmean;
     double TIMeanIN;
 
     void initData();
@@ -128,8 +133,8 @@ public:
 
     void initData();
 
-    void plasticity(double *burstTh, double *nonbursting, int t);
-    void plasticityLocal(double *burstTh, double *nonbursting, int t);
+    void plasticity(double *burstTh, bool *nonbursting, int t);
+    void plasticityLocal(double *burstTh, bool *nonbursting, int t);
 } ;
 
 class Fourier{
@@ -145,13 +150,16 @@ public:
 };
 
 
-double getSum( double *tosum, int N );
-double getSumB( double *tosum, int N1, int N2 );
-double getSum( int *tosum, int N );
-double getAvg( double *tosum, int N );
-double getAvgB( double *tosum, int N1, int N2 );
-double getAvg( int *tosum, int N );
-double getAvg( double **tosum, int N );
+//double getSum( double *tosum, int N );
+//double getSumB( double *tosum, int N1, int N2 );
+//double getSum( int *tosum, int N );
+//double getAvg( double *tosum, int N );
+//double getAvgB( double *tosum, int N1, int N2 );
+//double getAvg( int *tosum, int N );
+template <class T> double getAvg(T *tosum, int N, int N2 = 0);
+template <class T> double getSum(T *tosum, int N, int N2 = 0);
+
+double getAvg2D( double **tosum, int N );
 void fileExists(const char* pathname);
 
 class Corr {

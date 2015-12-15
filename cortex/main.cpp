@@ -30,13 +30,16 @@ int main(int argc, const char * argv[])
     Plasticity plast;
     double tau_q;
     double th_q;
+    double LTP;
+    double LTD;
+    string namecsv;
     Simulation *sim1;
     sim1 = &util.sim;
 
     sim1->initData();
-    cout << std::string(100, '*')<< endl;
-    cout << "BEGIN SIMULATION" << endl;
-    cout << std::string(100, '*')<< endl;
+//    cout << std::string(100, '*')<< endl;
+//    cout << "BEGIN SIMULATION" << endl;
+//    cout << std::string(100, '*')<< endl;
     for (int i = 1; i < argc; i++) {
         /* We iterate over argv[] to get the parameters stored inside.
         * Note that we're starting on 1 because we don't need to know the
@@ -50,7 +53,7 @@ int main(int argc, const char * argv[])
                 sim1->gamma_c = atof(argv[i + 1]);
             } else if (!strcmp(argv[i], "-N")) {
                 sim1->N = atoi(argv[i + 1]);
-                sim1->NE = int(0.8*sim1->N);
+                sim1->NE = int(0*sim1->N);
                 sim1->NI = sim1->N - sim1->NE;
             } else if (!strcmp(argv[i], "-ext")) {
                 sim1->ext = argv[i + 1];
@@ -74,10 +77,21 @@ int main(int argc, const char * argv[])
                 tau_q = atof(argv[i + 1]);
             } else if (!strcmp(argv[i], "-thq")) {
                 th_q = atof(argv[i + 1]);
+            } else if (!strcmp(argv[i], "-LTP")) {
+                LTP = atof(argv[i + 1]);
+            } else if (!strcmp(argv[i], "-LTD")) {
+                LTD = atof(argv[i + 1]);
+            } else if (!strcmp(argv[i], "-output")) {
+                namecsv = string(argv[i + 1]);
+                sim1->CONSOLE = true;
+                sim1->COMPUTE_PLAST = false;
+                sim1->SPIKES = false;
+                sim1->FOURIER = true;
+
             }
-            cout << std::string(100, '*')<< endl;
-            cout <<  "Arguments read"<< endl;
-            cout << std::string(100, '*')<< endl;
+//            cout << std::string(100, '*')<< endl;
+//            cout <<  "Arguments read"<< endl;
+//            cout << std::string(100, '*')<< endl;
         }
     }
     sim1->initDuration();
@@ -101,7 +115,8 @@ int main(int argc, const char * argv[])
     double* I = new double[N]{0};
     double* p = new double[N]{0};
     double* q = new double[N]{0};
-    double* nonbursting = new double[N]{0};
+    bool* nonbursting = new bool[N]{false};
+    bool* passive = new bool[N]{true};
     double meanG = 0;
     double meanRON_I = 0;
     int counter = 0;
@@ -112,7 +127,7 @@ int main(int argc, const char * argv[])
     int NbSpikesE = 0;
     int NewNbSpikesE = 0; // temp var to get number of spikes of Exc neurons at t-1
     int NewNbSpikesI = 0; // temp var to get number of spikes of Inh neurons at t-1
-    int* vv = new int[N]{0};
+    bool* vv = new bool[N]{false};
     vector<int> spikes_idx;
     vector<int> spikes_idy;
     vector<int> spikes_idx_tc;
@@ -137,8 +152,6 @@ int main(int argc, const char * argv[])
     vector<int>* spikeTimes_tc = new vector<int>[N];
     deque<int>* spikeTimesCor = new deque<int>[N];
     double* noise = new double[N]{0};
-    string namecsv;
-
     double meanBurst= 0 ;
     double meanSpike = 0;
     double meanSpikeNonBurst = 0;
@@ -153,13 +166,6 @@ int main(int argc, const char * argv[])
     double Rm=4;
     double Cm=1;
 
-    if(sim1->CONSOLE){
-        T = atoi(argv[1]);
-        sim1->gamma_c = atof(argv[2]);
-        sim1->TImean = atof(argv[3]);
-        namecsv = argv[4];
-    }
-
     // load simulation data
     //
     mvgamma.sim = *sim1;
@@ -169,14 +175,22 @@ int main(int argc, const char * argv[])
     plast.initData();
     plast.tau_q = tau_q;
     plast.th_q = th_q;
-    
+    if (LTD) {
+        plast.A_gapD = LTD;
+        sim1->LTD = LTD;
+    }
+    if (LTP) {
+        plast.A_gapP = LTP;
+        sim1->LTP = LTP;
+    }
+
     // random number generation
     //
     random_device rd;
     mt19937 e2(rd());
     normal_distribution<> dist(0.0, 1.0);
-    
-    
+
+
     if (!sim1->CONSOLE) {
         std::cout << "Neural Network Initialization\n";
         cout << "*****************************" << endl;
@@ -194,7 +208,7 @@ int main(int argc, const char * argv[])
     }
 
     std::fill(v,v+N,-60); // init v to -60mV
-    
+
     // Init connection matrix
     //
     if (!sim1->GLOB) {
@@ -207,7 +221,7 @@ int main(int argc, const char * argv[])
             }
         }
     }
-    
+
     // start counter time
     //
     time (&starttime);
@@ -231,7 +245,10 @@ int main(int argc, const char * argv[])
                 sim1->TImean = sim1->TIMeanIN;
             }
         }
-        
+        else {
+            sim1->TImean = sim1->TIMeanIN + sim1->stimulation;
+        }
+
         /***************************************************
          * PRINT PROGRESS
          ***************************************************/
@@ -239,7 +256,7 @@ int main(int argc, const char * argv[])
             time (&endtime);
             double dif = difftime (endtime,previoustime);
             if(t % int(9*T/100) == 0 ) {
-                cout << t/3*100/T << " % \t spikes:" << getAvg(vv, sim1->NI) << "\t V:" << getAvgB(v, sim1->NI, sim1->NE) << endl;
+//                cout << t/3*100/T << " % \t spikes:" << getAvg<bool>(vv, sim1->NI) << "\t V:" << getAvg<double>(v, sim1->NI, sim1->NE) << endl;
             }
             if(dif > 2) {
                 double dif2 = difftime (endtime,starttime);
@@ -250,14 +267,14 @@ int main(int argc, const char * argv[])
                 }
                 else {
                     printf ("-- Elapsed time : %.2lf seconds.\t %.6lf \t %.6lf \n",
-                            dif2, getAvg(plast.VgapLocal, sim1->NI), meanRON_I );
+                            dif2, getAvg2D(plast.VgapLocal, sim1->NI), meanRON_I );
                 }
             }
         }
-        
+
         Vsum = getSum(v, sim1->NI);
-        NbSpikesE = 0;
-        NbSpikesI = 0;
+        NewNbSpikesI = 0;
+        NewNbSpikesE = 0;
         //
         /***************************************************
          * NEURON LOOP
@@ -291,7 +308,7 @@ int main(int argc, const char * argv[])
          *
          *      FS: a = 0.1, b = 0.2, c = -65, d = 2
          */
-        
+
         //        #pragma omp parallel for num_threads(NUM_THREADS)
 
         for(int i=0; i < sim1->N ; i++){
@@ -319,19 +336,29 @@ int main(int argc, const char * argv[])
                     }
                 }
                 I[i] = Ieff[i] + Ichem[i] + Igap[i];
-//                v[i] = v[i] + dt * (1./40.) * (0.25 * (pow(v[i],2) + 110 * v[i] + 45*65) - u[i] + I[i]);  //TRN eq
-                v[i] += dt/20 * ((v[i]+55)*(v[i]+40) - u[i] + I[i]);
-                u[i] += dt * 0.2 * ( 0.025*pow(v[i]+55,3) * (v[i] > -55) - u[i] );
-//                u[i] = u[i] + dt * 0.015 * ( b * (v[i] + 65) - u[i] );  // TRN eq
-                vv[i] = v[i] > 25.0;
+                // TRN EQUATIONS --------------------------------------
+                //  v[i] = v[i] + dt * (1./40.) * (0.25 * (pow(v[i],2) + 110 * v[i] + 45*65) - u[i] + I[i]);  //TRN eq
+                //  u[i] = u[i] + dt * 0.015 * ( b * (v[i] + 65) - u[i] );  // TRN eq
+                // TRN EQUATIONS --------------------------------------
 
+                // FS EQ --------------------------------------
+//                v[i] += dt/20 * ((v[i]+55)*(v[i]+40) - u[i] + I[i]);
+//                u[i] += dt * 0.2 * ( 0.025*pow(v[i]+55,3) * (v[i] > -55) - u[i] );
+//                vv[i] = v[i] > 25.0;
+                // --------------------------------------
+
+                v[i] += dt/20 * ((v[i]+55)*(v[i]+40) - u[i] + 2.5*I[i]);
+                u[i] += dt * 0.037 * ( 0.05*pow((v[i]+55),3) * (v[i] > -55) - u[i] );
+                vv[i] = v[i] > 20.0;
 
                 /***************************************************
                  * SAVE SPIKES
                  ***************************************************/
                 if(vv[i]) {
                     NewNbSpikesI++;
-                    v[i] = -45;
+//                    v[i] = -45; // FS
+                    v[i] = -41;
+                    u[i] += -20;
                     if ( !sim1->CONSOLE and sim1->SPIKES and  sim1->saveTime(t))
                     {
                         // save spikes only close to transitions
@@ -379,9 +406,9 @@ int main(int argc, const char * argv[])
                 */
                 noise[i] = dist(e2);
                 Iback[i] = Iback[i] + dt/(sim1->tau_I*1.0) * (-Iback[i] + noise[i]);
-                Ieff[i] = Iback[i] / sqrt(1/(2*(sim1->tau_I/dt))) * sim1->TC_Tsig + sim1->TImean;
-                Ichem[i] = Ichem[i] + dt/(sim1->TC_tau_syn*1.) * (-Ichem[i]
-                                                                  + plast.WEE * (NbSpikesE - ( v[i] > 0.0))
+                Ieff[i] = Iback[i] / sqrt(1/(2*(sim1->tau_I/dt))) * sim1->C_Tsig + sim1->TEmean;
+                Ichem[i] = Ichem[i] + dt/(sim1->C_tau_syn*1.) * (-Ichem[i]
+                                                                  + plast.WEE * (NbSpikesE - ( v[i] > 35.0))
                                                                   + plast.WIE * NbSpikesI);
 
 
@@ -416,16 +443,16 @@ int main(int argc, const char * argv[])
         //
         NbSpikesI = NewNbSpikesI;
         NbSpikesE = NewNbSpikesE;
-        meanBurst += getAvg(p, sim1->NI);
-        meanSpikeNonBurst += getAvg(nonbursting, sim1->NI);
+        meanBurst += getAvg<double>(p, sim1->NI);
+//        meanSpikeNonBurst += getAvg<bool>(nonbursting, sim1->NI);
         meanSpike += NbSpikesI/(sim1->NI*1.0);  // only for inhibitory neurons here
 
         if (sim1->FOURIER){
-            vm.push_back(getAvg(v, sim1->NI));
+            vm.push_back(getAvg<double>(v, sim1->NI));
         }
-        pm.push_back(getAvg(p, sim1->NI));
-        qm.push_back(getAvg(q, sim1->NI));
-        lm.push_back(getAvg(LowSp, sim1->NI));
+        pm.push_back(getAvg<double>(p, sim1->NI));
+        qm.push_back(getAvg<double>(q, sim1->NI));
+        lm.push_back(getAvg<double>(LowSp, sim1->NI));
 
         /***************************************************
          * PLASTICITY
@@ -437,7 +464,10 @@ int main(int argc, const char * argv[])
             if (sim1->GLOB) {
                 // compute global plasticity
                 //
-                plast.plasticity(p, nonbursting, t);
+                if (sim1->PLAST_RULE == "nonbursting") plast.plasticity(p, nonbursting, t);
+                else if (sim1->PLAST_RULE == "spiking") plast.plasticity(p, vv, t);
+                else if (sim1->PLAST_RULE == "passive") plast.plasticity(p, passive, t);
+
                 mvgamma.compute(plast.Vgap,t, T);  //moving average
             }
             else {
@@ -549,13 +579,13 @@ int main(int argc, const char * argv[])
         // SAVE DATA CONSOLE MODE
         //
         if (sim1->FOURIER) {
-            // compute FFT on averaged voltage
+            // compute FFT on Local Field Potential
             //
             FFT.computeFFT(vm);
         }
         
         double resultCorr = correlation.computeCorrelation(spikeTimesCor, dt);
-        const string path_csv =  "/Users/"+sim1->computer+sim1->directory+namecsv+".csv";
+        string path_csv =  "/Users/"+sim1->computer+sim1->directory+namecsv+".csv";
         ofstream csvFile(path_csv, std::ofstream::out | std::ofstream::app);
         csvFile << plast.Vgap*sim1->NI << ";" << sim1->TImean << ";" << resultCorr << ";" << meanSpike/T << ";" << meanSpikeNonBurst/T << ";" << meanBurst/T <<";"<< FFT.fftFreq<<";"<< FFT.fftPower<< endl;
         cout << "Data written: " << plast.Vgap*N << " " << sim1->TImean << "\tCorr:" << resultCorr ;

@@ -15,6 +15,8 @@ int Util::writedata(string name, vector<double> towrite) {
     sstm << name << "_g-" << sim.gamma_c << "_TImean-" << (sim.TImean) << "_T-" << (sim.T * sim.dt) << "_Glob-" <<
     glob;
     sstm << "_dt-" << sim.dt << "_N-" << sim.N << "_S-" << sim.stimulation << "_WII-" << sim.GammaII;
+    if (sim.LTD) sstm << "_LTD-" << sim.LTD;
+    if (sim.LTP) sstm << "_LTP-" << sim.LTP;
 
 //    //test if path exists
 //    fileExists(sim.path.c_str());
@@ -32,6 +34,8 @@ int Util::writedataint(string name, vector<int> towrite) {
     sstm << name << "_g-" << sim.gamma_c << "_TImean-" << (sim.TImean) << "_T-" << (sim.T * sim.dt) << "_Glob-" <<
     glob;
     sstm << "_dt-" << sim.dt << "_N-" << sim.N << "_S-" << sim.stimulation << "_WII-" << sim.GammaII;
+    if (sim.LTD) sstm << "_LTD-" << sim.LTD;
+    if (sim.LTP) sstm << "_LTP-" << sim.LTP;
 
 //    //test if path exists
     fileExists(sim.path.c_str());
@@ -43,15 +47,21 @@ int Util::writedataint(string name, vector<int> towrite) {
 }
 
 void Simulation::initData() {
+    PLAST_RULE = "nonbursting";
+//    PLAST_RULE = "spiking";
+//    PLAST_RULE = "passive";
     SPINDLE_LOWPASS = false;
-    COMPUTE_PLAST = false;
+    COMPUTE_PLAST = true;
     MIN_PLAST_THRESH = false;
     CORRELATION = false;
     FOURIER = true;
     SPIKES = true;
     CONSOLE = false;
-    SOFT = true;
+    SOFT = false;
     GLOB = true;
+
+    LTD = 0;
+    LTP = 0;
 
     dt = 0.25;
     T = 10000 / dt;
@@ -63,8 +73,8 @@ void Simulation::initData() {
     T1 = (int) d1/dt;
     T2 = (int) d1/dt + d2/dt;
     T3 = (int) d1/dt + d2/dt + d3/dt;
-    NI = (int) 1;
-    NE = (int) 10;
+    NI = (int) 4;
+    NE = (int) 20;
     N = NE + NI;
     stimulation = 70;
 
@@ -75,29 +85,28 @@ void Simulation::initData() {
     ext = "";
     path = root + computer + directory;
 
-    Tsig = 60.0;
-    tau_I = 5.0;
+    Tsig = 60.0; // Variance of current in the inhibitory neurons
+    tau_I = 5.0; // Time constant to filter the synaptic inputs
     tau_syn = 5.0;
-    GammaII = 1400.00;
-
-
-    GammaIE = 1400.00;
-    GammaEE = 1400.00;
-    GammaEI = 1400.00;
+    GammaII = 1400.00; // I to I connectivity
+    GammaIE = -1000.00; // I to E connectivity
+    GammaEE = 5000.00; // E to E connectivity
+    GammaEI = 1400.00; // E to I connectivity
 
     TC_Tsig = 70.0;
     TC_tau_I = 5.0;
     TC_tau_syn = 5.0;
 
-    C_Tsig = 70.0;
+    C_Tsig = 75.0;
     C_tau_I = 10.0;
     C_tau_syn = 5.0;
 
 
-    gamma_c = 3;
-    TImean = 50.0;
+    gamma_c = 3;    // Initial gap junction strength
+    TImean = 50.0; // Mean imput current in inhibitory neurons.
+    TEmean = 72.0; // Mean input current in inhibitory neurons.
     TIMeanIN = TImean;
-    cout << "Data initialized " << endl;
+//    cout << "Data initialized " << endl;
 }
 
 void Simulation::initDuration() {
@@ -106,10 +115,10 @@ void Simulation::initDuration() {
     T2 = (int) d1/dt + d2/dt;
     T3 = (int) d1/dt + d2/dt + d3/dt;
     T = (int) T3;
-    cout << "***** durations ****"<< endl;
-    cout << T1 << "\t" << T2 << "\t" << T3 <<  endl;
-    cout << T <<endl;
-    cout << std::string(100, '*')<< endl;
+//    cout << "***** durations ****"<< endl;
+//    cout << T1 << "\t" << T2 << "\t" << T3 <<  endl;
+//    cout << T <<endl;
+//    cout << std::string(100, '*')<< endl;
 }
 
 bool Simulation::saveTime(int t) {
@@ -118,8 +127,8 @@ bool Simulation::saveTime(int t) {
 
 void Plasticity::initData() {
     // params for plast
-    cout << std::string(100, '*')<< endl;
-    cout <<  "Init plasticity "<< endl;
+//    cout << std::string(100, '*')<< endl;
+//    cout <<  "Init plasticity "<< endl;
     FACT = 6 * 500.0;
     tau_lowsp = 10.0;
     tau_q = 1.3;
@@ -131,8 +140,9 @@ void Plasticity::initData() {
     A_gapP = A_gapD * 0.5;
 
 
-    VgapIN = sim.gamma_c / sim.NI;
-    Vgap = VgapIN;
+//    VgapIN = sim.gamma_c / sim.NI;
+    VgapIN = 8.0 / sim.NI;
+    Vgap = sim.gamma_c / sim.NI;
 
     VgapLocal = new double *[sim.NI];
 
@@ -150,23 +160,23 @@ void Plasticity::initData() {
     }
 
 
-    cout <<  "Plasticity initialized: WII: "<< WII << "\t NI:" << sim.NI <<  endl;
-    cout << std::string(100, '*')<< endl;
+//    cout <<  "Plasticity initialized: WII: "<< WII << "\t NI:" << sim.NI <<  endl;
+//    cout << std::string(100, '*')<< endl;
 }
 
 /*****************************************************************************
  * PASTICITY
  *****************************************************************************/
-void Plasticity::plasticity(double *burstTh, double *nonbursting, int t) {
+void Plasticity::plasticity(double *burstTh, bool *topotentiate, int t) {
     if (t * sim.dt > 100) {
-        double Pmean = getAvg(burstTh, sim.NI);
+        double Pmean = getAvg<double>(burstTh, sim.NI);
         if (sim.SOFT) {
             Vgap = Vgap + VgapIN * sim.dt * (-A_gapD * Pmean +
-                                             A_gapP * (VgapIN - Vgap) / VgapIN * getSum(nonbursting, sim.NI) /
+                                             A_gapP * (VgapIN - Vgap) / VgapIN * getSum<bool>(topotentiate, sim.NI) /
                                              (sim.NI * 1.0));
         }
         else {
-            Vgap = Vgap + VgapIN * sim.dt * (-A_gapD * Pmean + A_gapP * getSum(nonbursting, sim.NI) / (sim.NI * 1.0));
+            Vgap = Vgap + VgapIN * sim.dt * (-A_gapD * Pmean + A_gapP * getSum<bool>(topotentiate, sim.NI) / (sim.NI * 1.0));
         }
         if (sim.MIN_PLAST_THRESH) {
             Vgap = max(1.1/sim.NI, Vgap);
@@ -176,7 +186,7 @@ void Plasticity::plasticity(double *burstTh, double *nonbursting, int t) {
     }
 }
 
-void Plasticity::plasticityLocal(double *burstTh, double *nonbursting, int t) {
+void Plasticity::plasticityLocal(double *burstTh, bool *topotentiate, int t) {
     double instantMeanG = 0;
     double dG = 0;
     if (t * sim.dt > 100) {
@@ -184,7 +194,7 @@ void Plasticity::plasticityLocal(double *burstTh, double *nonbursting, int t) {
         for (int i = 0; i < sim.NI; i++) {
             for (int j = 0; j < i; j++) {
                 dG = (i != j) * (VgapIN * sim.dt * (-A_gapD * burstTh[i] +
-                                                    A_gapP * (VgapIN - VgapLocal[i][j]) / VgapIN * (nonbursting[i])));
+                                                    A_gapP * (VgapIN - VgapLocal[i][j]) / VgapIN * (topotentiate[i])));
                 VgapLocal[i][j] = max(0.0, VgapLocal[i][j] + 2 * dG);
                 VgapLocal[j][i] = max(0.0, VgapLocal[j][i] + 2 * dG);
                 instantMeanG += VgapLocal[i][j];
@@ -210,45 +220,68 @@ void MovingAverage::compute(double instantMeanG, int t, int T) {
 /*****************************************************************************
  * UTILITY FNs
  *****************************************************************************/
-
-double getSum(double *tosum, int N) {
+template <class T>
+double getSum(T *tosum, int N, int N2) {
     double sum = 0;
-    for (int i = 0; i < N; i++) {
-        sum += tosum[i];
+    if (N2 == 0) {
+        for (int i = 0; i < N; i++) {
+            sum += (double)tosum[i];
+        }
     }
-    return sum;
-}
-
-double getSumB(double *tosum, int N1, int N2) {
-    double sum = 0;
-    for (int i = N1; i < N2; i++) {
-        sum += tosum[i];
+    else {
+        for (int i = N; i < N2; i++) {
+            sum += (double)tosum[i];
+        }
     }
-    return sum;
+    return (double)sum;
 }
 
-double getSum(int *tosum, int N) {
-    double sum = 0;
-    for (int i = 0; i < N; i++) {
-        sum += tosum[i];
-    }
-    return sum;
+template <class T>
+double getAvg(T *tosum, int N, int N2) {
+    if (N2>0) return (float) getSum(tosum, N, N2) / (N2-N);
+    else return (float) getSum(tosum, N) / N;
 }
 
-double getAvg(double *tosum, int N) {
-    return getSum(tosum, N) / N;
-}
+//double getSum(double *tosum, int N) {
+//    double sum = 0;
+//    for (int i = 0; i < N; i++) {
+//        sum += tosum[i];
+//    }
+//    return (float)sum;
+//}
 
-double getAvgB(double *tosum, int N1, int N2) {
-    return getSumB(tosum, N1, N2) / (N2-N1);
-}
+//double getSumB(double *tosum, int N1, int N2) {
+//    double sum = 0;
+//    for (int i = N1; i < N2; i++) {
+//        sum += tosum[i];
+//    }
+//    return sum;
+//}
+
+//double getSum(int *tosum, int N) {
+//    double sum = 0;
+//    for (int i = 0; i < N; i++) {
+//        sum += tosum[i];
+//    }
+//    return sum;
+//}
+
+//double getAvg(double *tosum, int N) {
+//    return getSum(tosum, N) / N;
+//}
+//
+//double getAvgB(double *tosum, int N1, int N2) {
+//    return getSumB(tosum, N1, N2) / (N2-N1);
+//}
+//
+//
+//double getAvg(int *tosum, int N) {
+//    return getSum(tosum, N) / N;
+//}
 
 
-double getAvg(int *tosum, int N) {
-    return getSum(tosum, N) / N;
-}
-
-double getAvg(double **tosum, int N) {
+//
+double getAvg2D(double **tosum, int N) {
     double result = 0;
     for (int i = 0; i < N; i++) {
         for (int j = 0; j < i; j++) {
@@ -286,7 +319,7 @@ void Fourier::fft(std::vector<double> &inp, std::vector<double> &out, bool forwa
 
 void Fourier::computeFFT(vector<double> vm) {
 
-    const int n = int(3 * sim.T);
+    const int n = int(sim.T);
     double delta = 0.00025;
 
     vector<double> inp(2 * n, 0);
@@ -311,7 +344,7 @@ void Fourier::computeFFT(vector<double> vm) {
     result = std::max_element(amp.begin(), amp.end() - n / 2);
     distance = std::distance(amp.begin(), result);
 
-    fftPower = pow(amp[distance] / (3 * sim.T / sim.dt), 2);
+    fftPower = pow(amp[distance] / (sim.T / sim.dt), 2);
     fftFreq = freq[distance];
 
 }

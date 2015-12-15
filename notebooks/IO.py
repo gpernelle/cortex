@@ -7,14 +7,14 @@ class IO:
         self.data_path = ""
         self.executable_name = ""
 
-    def runSimulation(self, N, i, G ,S, d1, d2, d3, before, after, s, WII, tq, thq):
+    def runSimulation(self, N, i, G ,S, d1, d2, d3, before, after, s, WII, LTP, LTD):
         ext = "_%d.txt"%i
         sh.cd(self.executable_path)
         subprocess.check_output([self.executable_name, '-N', str(N), '-ext', str(ext),
                                 '-d1', str(d1), '-d2', str(d2), '-d3', str(d3) ,
                                 '-before', str(before), '-after', str(after),
                                  '-S', str(S),  '-G', str(G), '-s', str(s),
-                                 '-WII', str(WII),   '-tq', str(tq),  '-thq', str(thq)])
+                                 '-WII', str(WII), '-LTP', str(LTP), '-LTD', str(LTD)])
 
 
     def readSimulationSSP1(self, N, i, G,S, d1, d2, d3, before, after):
@@ -27,14 +27,14 @@ class IO:
         N = N
         ext = "_%d.txt"%i
         # compute the paths of data files.
-        extension = "_g-%d_TImean-%d_T-%d_Glob-%d_dt-0.25_N-%d_S-%d_WII-%d" % (g, TImean,T, glob, N, S)
+        extension = "_g-%d_TImean-%d_T-%d_Glob-%d_dt-0.25_N-%d_S-%d_WII-%d_LTD-%.6g_LTP-%.6g" % (g, TImean,T, glob, N, S)
         extension += ext
 
         ssp1_p = DIRECTORY + "ssp"+ extension
         ssp1 = np.fromfile(ssp1_p, dtype='double', count = -1, sep=" ")
         return ssp1
 
-    def readSimulation(self, N, i, G,S, d1, d2, d3, before, after, WII):
+    def readSimulation(self, N, i, G,S, d1, d2, d3, before, after, WII, LTP, LTD):
         T = d1+d2+d3
         DIRECTORY = self.data_path
         # simulation parameters
@@ -45,7 +45,7 @@ class IO:
         dt = 0.25
         ext = "_%d.txt"%i
         # compute the paths of data files.
-        extension = "_g-%.1f_TImean-%d_T-%d_Glob-%d_dt-0.25_N-%d_S-%d_WII-%d" % (g, TImean,T, glob, N, S, WII)
+        extension = "_g-%.6g_TImean-%d_T-%d_Glob-%d_dt-0.25_N-%d_S-%d_WII-%d_LTD-%.6g_LTP-%.6g" % (g, TImean,T, glob, N, S, WII, LTD, LTP)
         extension += ext
 
         path_x  = DIRECTORY + "spike_x" + extension
@@ -69,21 +69,25 @@ class IO:
         stimulation_p = DIRECTORY +"stimulation"+ extension
     #     print path_g
 
-        spikes_x = np.fromfile(path_x, dtype='uint',count =  -1, sep =" ")
-        spikes_x_tc = np.fromfile(path_x_tc, dtype='uint',count =  -1, sep =" ")
-        spikes_y = np.fromfile(path_y, dtype='uint',count =  -1, sep =" ")
-        spikes_y_tc = np.fromfile(path_y_tc, dtype='uint', count = -1, sep=" ")
-        gamma = np.fromfile(path_g, dtype='double', count = -1, sep=" ")
-        correlation = np.fromfile(path_c, dtype='double', count = -1, sep=" ")
-        ssp1 = np.fromfile(ssp1_p, dtype='double', count = -1, sep=" ")
-        p = np.fromfile(p_p, dtype='double', count = -1, sep=" ")
-        q = np.fromfile(q_p, dtype='double', count = -1, sep=" ")
-        LowSp = np.fromfile(lowsp_p, dtype='double', count = -1, sep=" ")
-        vm = np.fromfile(vm_p, dtype='double', count = -1, sep=" ")
-        #ssp2 = np.fromfile(ssp2_p, dtype='double', count = -1, sep=" ")
-        #ssp3 = np.fromfile(ssp3_p, dtype='double', count = -1, sep=" ")
-        stimulation = np.fromfile(stimulation_p, dtype='double', count = -1, sep=" ")
-        return spikes_x, spikes_y, spikes_x_tc, spikes_y_tc, gamma, correlation, ssp1, stimulation, p, q, LowSp, vm
+        try:
+            spikes_x = np.fromfile(path_x, dtype='uint',count =  -1, sep =" ")
+            spikes_x_tc = np.fromfile(path_x_tc, dtype='uint',count =  -1, sep =" ")
+            spikes_y = np.fromfile(path_y, dtype='uint',count =  -1, sep =" ")
+            spikes_y_tc = np.fromfile(path_y_tc, dtype='uint', count = -1, sep=" ")
+            gamma = np.fromfile(path_g, dtype='double', count = -1, sep=" ")
+            correlation = np.fromfile(path_c, dtype='double', count = -1, sep=" ")
+            ssp1 = np.fromfile(ssp1_p, dtype='double', count = -1, sep=" ")
+            p = np.fromfile(p_p, dtype='double', count = -1, sep=" ")
+            q = np.fromfile(q_p, dtype='double', count = -1, sep=" ")
+            LowSp = np.fromfile(lowsp_p, dtype='double', count = -1, sep=" ")
+            vm = np.fromfile(vm_p, dtype='double', count = -1, sep=" ")
+            #ssp2 = np.fromfile(ssp2_p, dtype='double', count = -1, sep=" ")
+            #ssp3 = np.fromfile(ssp3_p, dtype='double', count = -1, sep=" ")
+
+            stimulation = np.fromfile(stimulation_p, dtype='double', count = -1, sep=" ")
+            return spikes_x, spikes_y, spikes_x_tc, spikes_y_tc, gamma, correlation, ssp1, stimulation, p, q, LowSp, vm
+        except:
+            print('can\' find:\t '+ path_g)
 
 class Cortex(IO):
     def __init__(self):

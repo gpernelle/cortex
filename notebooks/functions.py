@@ -213,6 +213,48 @@ def plotPTSH(before, after,binsize, h, s, it, DIRECTORY, S, N):
     extension = "_S-%d_N-%d_T-%d" % (S, N, T)
     print(DIRECTORY + extension + '_PTSH.pdf')
     plt.savefig(DIRECTORY + extension + '_PTSH.pdf')
+
+def plotDiagram(figure, ax, dataframe, title, column, filename, save=True, front=False):
+    ax.set_ylim(ymin=50, ymax=400)
+    # Set color transparency (0: transparent; 1: solid)
+    a = 1
+    # Create a colormap
+    customcmap = [(x/24.0,  x/48.0, 0.05) for x in range(len(dataframe))]
+
+    dataframe.plot(kind="hexbin",
+                   y='nuEI', x='gammaC', C=column,gridsize=60, ax=ax, alpha=a, legend=False, colormap=cx4,
+                          # edgecolor='w',
+            title=title)
+    ax.set_title(title, y=1.03)
+    # Customize title, set position, allow space on top of plot for title
+    # ax.set_title(ax.get_title(), fontsize=36, alpha=a)
+    # ax.title.set_fontsize(36)
+    plt.subplots_adjust(top=0.9)
+    # ax.title.set_position((0,1.08))
+    # Set x axis label on top of plot, set label text
+    ax.xaxis.set_label_position('bottom')
+    xlab = r'$\gamma_C$'
+    ylab = r'$\nu_{EI}$'
+    ax.set_xlabel(xlab, alpha=a)
+    ax.set_ylabel(ylab, alpha=a)
+    ax.set_xticklabels(ax.get_xticks(), alpha=a)
+    ax.set_yticklabels(ax.get_yticks(), alpha=a)
+
+    # plasticity trajectory
+    # x = spikingSimulation.gamma*spikingSimulation.N_I
+    # y = (spikingSimulation.stimulation+neuronI.N_mean)/(neuronI.V_th - neuronI.vReset)
+    # plt.plot(x,y)
+    if front:
+        dataframe['logburst']= (dataframe['burst']).apply(np.log10)
+        df_sliced = dataframe[(dataframe['logburst']>-6) & (dataframe['logburst']<-5.8)]
+        contour = df_sliced[['gammaC','nuEI']].get_values()
+        yvals, xvals = bezier_curve(contour, nTimes=100)
+        frontier = np.array([xvals,yvals])
+        ax.plot(frontier[1,:], frontier[0,:], '-w', linewidth=3)
+    if save:
+        plt.tight_layout()
+        plt.savefig(DIRECTORY + filename)
+    return ax
     
 def savePTSH(before, after, h, s, it, DIRECTORY, S, N):
     '''
@@ -244,9 +286,9 @@ def plotRasterGPU(spikes_x, spikes_y, titlestr):
     '''
     Take advantage of WebGL to draw raster plot
     '''
-    output_file("spikesGPU.html", title="Neural activity")
+    # output_file("spikesGPU.html", title="Neural activity")
 
-    p = figure(plot_width=1200, plot_height=500, webgl=True, title = titlestr)
+    p = figure(plot_width=1000, plot_height=500, webgl=True, title = titlestr)
     if len(spikes_x) > 100000:
         p.scatter(spikes_x[0:100000],spikes_y[0:100000], alpha=0.5)
     else:
@@ -268,3 +310,112 @@ def maxPowerFreq(y, dt):
     powerFreq = np.argmax(p1) * np.max(f1)/len(f1)
 
     return powerFreq, powerVal
+
+def bernstein_poly(i, n, t):
+    """
+     The Bernstein polynomial of n, i as a function of t
+    """
+
+    return comb(n, i) * ( t**(n-i) ) * (1 - t)**i
+
+
+def bezier_curve(points, nTimes=1000):
+    """
+       Given a set of control points, return the
+       bezier curve defined by the control points.
+
+       points should be a list of lists, or list of tuples
+       such as [ [1,1],
+                 [2,3],
+                 [4,5], ..[Xn, Yn] ]
+        nTimes is the number of time steps, defaults to 1000
+
+        See http://processingjs.nihongoresources.com/bezierinfo/
+    """
+
+    nPoints = len(points)
+    xPoints = np.array([p[0] for p in points])
+    yPoints = np.array([p[1] for p in points])
+
+    t = np.linspace(0.0, 1.0, nTimes)
+
+    polynomial_array = np.array([ bernstein_poly(i, nPoints-1, t) for i in range(0, nPoints)   ])
+
+    xvals = np.dot(xPoints, polynomial_array)
+    yvals = np.dot(yPoints, polynomial_array)
+
+    return xvals, yvals
+
+def frontgamma(nuEI, frontier, tol = 10):
+    '''
+    Return the value of GAMMA for a value of NUEI
+    '''
+    indices = np.where(np.logical_and(frontier[0]<=nuEI + tol, frontier[0]>=nuEI - tol))
+    return np.mean(frontier[1][indices[0]])
+
+def find_nearest(array,value):
+    idx = (np.abs(array-value)).argmin()
+    return array[idx], idx
+
+def fixpoint(df, nuEI, ratio, rule, g0 = 7):
+    '''
+    Search and return the fix point for a plasticity rule, or 0 if none
+    '''
+    LTP = 10
+    LTD = LTP * ratio
+    df_sliced = df[df['nuEI']==nuEI]
+    df_sliced = df_sliced.sort_values(by=['gammaC'])
+    bg = df_sliced[['burst','gammaC']].get_values()
+    sg = df_sliced[['spike','gammaC']].get_values()
+    rg = df_sliced[['non-burst','gammaC']].get_values()
+    df_sliced['passive'] = df_sliced['burst'].apply(lambda x :1-x)
+    passive = df_sliced[['passive','gammaC']].get_values()
+#     sg = 1 - np.array(bg)
+    cg =  df_sliced[['corI','gammaC']].get_values()
+    if rule == 1:
+        dG = LTP * sg[:,0] - LTD * bg[:,0]
+    elif rule == 4:
+        dG = LTP * passive[:,0] - LTD * bg[:,0]
+    elif rule == 5:
+        dG = LTP * rg[:,0] - LTD * bg[:,0]
+    elif rule ==0:
+        dG = LTP * (g0 - sg[:,1] )/g0 * sg[:,0] - LTD * bg[:,0]
+    elif rule ==2:
+        dG = LTP * (g0 - passive[:,1] )/g0 * passive[:,0] - LTD * bg[:,0]
+    elif rule ==3:
+        dG = LTP * (g0 - rg[:,1] )/g0 * rg[:,0] - LTD * bg[:,0]
+    res = 0
+    dg2 = np.array(dG)
+    if (dg2 > 0).all() or (dg2 < 0).all():
+        res = 0
+    else:
+        minval , idx =  find_nearest(dg2,0)
+        res = sg[idx,1]
+    return res
+
+def overunder(df, frontier, rule):
+    '''
+    return 0 if fixpoint over in the SYNC regime, 1 otherwise
+    '''
+    if rule in [0,1,5,3]:
+        col = np.arange(3,5,0.05) #ratio for active rule
+    else:
+        col = np.arange(60,180,3) #ratio for passive rule
+    row = np.arange(0,200,1) #nu
+    Z = np.zeros(shape=(len(row),len(col)))
+    for i,ratio in enumerate(col):
+        for j, nuEI in enumerate(row):
+            f= fixpoint(df, nuEI, ratio, rule)
+            border = frontgamma(nuEI, frontier)
+            Z[len(row)-1-j,i] = abs(f-border)*((f<border) and (f>0.15) and (nuEI>48))*1.0
+    return Z
+
+def plotStability(ax, Z, ylabel, title, extent):
+    cx_blue = cubehelix.cmap(reverse=False, start=3., rot=0)
+    ax.set_xlabel('ratio')
+    ax.set_ylabel(r'Excitatory input $\nu$')
+    ax.set_title('Hard. all-spiking', y=1.08)
+    image = ax.imshow(Z, interpolation='nearest', extent=extent,cmap=cx_blue, aspect=2/200)#, cmap =cx4)# drawing the function
+    plt.colorbar(image)
+    return ax
+
