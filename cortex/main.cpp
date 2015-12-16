@@ -345,20 +345,39 @@ int main(int argc, const char * argv[])
 //                v[i] += dt/20 * ((v[i]+55)*(v[i]+40) - u[i] + I[i]);
 //                u[i] += dt * 0.2 * ( 0.025*pow(v[i]+55,3) * (v[i] > -55) - u[i] );
 //                vv[i] = v[i] > 25.0;
-                // --------------------------------------
-
+//                if(vv[i]) {
+//                    v[i] = -45; // FS
+//                }
+//                 FS mod1 --------------------------------------
                 v[i] += dt/20 * ((v[i]+55)*(v[i]+40) - u[i] + 2.5*I[i]);
                 u[i] += dt * 0.037 * ( 0.05*pow((v[i]+55),3) * (v[i] > -55) - u[i] );
                 vv[i] = v[i] > 20.0;
+                if(vv[i]) {
+                    v[i] = -41;
+                    u[i] += -20;
+                }
+//                // FS mod2 --------------------------------------
+//                v[i] += dt/25 * ((v[i]+55)*(v[i]+40) - u[i] + I[i]);
+//                u[i] += dt * 0.037 * ( 0.04*pow((v[i]+55),3) * (v[i] > -55) - u[i] );
+//                vv[i] = v[i] > 20.0;
+//                if(vv[i]) {
+//                    v[i] = -43;
+//                }
+//                // FS mod3 --------------------------------------
+//                v[i] += dt/20 * ((v[i]+55)*(v[i]+40) - u[i] + I[i]);
+//                u[i] += dt * 0.08 * ( 0.02*pow((v[i]+55),3) * (v[i] > -55) - u[i] );
+//                vv[i] = v[i] > 0.0;
+//                if(vv[i]) {
+//                    v[i] = -45;
+//                    u[i]+=0;
+//                }
 
                 /***************************************************
                  * SAVE SPIKES
                  ***************************************************/
                 if(vv[i]) {
                     NewNbSpikesI++;
-//                    v[i] = -45; // FS
-                    v[i] = -41;
-                    u[i] += -20;
+
                     if ( !sim1->CONSOLE and sim1->SPIKES and  sim1->saveTime(t))
                     {
                         // save spikes only close to transitions
@@ -444,7 +463,7 @@ int main(int argc, const char * argv[])
         NbSpikesI = NewNbSpikesI;
         NbSpikesE = NewNbSpikesE;
         meanBurst += getAvg<double>(p, sim1->NI);
-//        meanSpikeNonBurst += getAvg<bool>(nonbursting, sim1->NI);
+        meanSpikeNonBurst += getAvg<bool>(nonbursting, sim1->NI);
         meanSpike += NbSpikesI/(sim1->NI*1.0);  // only for inhibitory neurons here
 
         if (sim1->FOURIER){

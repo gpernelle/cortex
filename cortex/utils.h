@@ -156,8 +156,31 @@ public:
 //double getAvg( double *tosum, int N );
 //double getAvgB( double *tosum, int N1, int N2 );
 //double getAvg( int *tosum, int N );
-template <class T> double getAvg(T *tosum, int N, int N2 = 0);
-template <class T> double getSum(T *tosum, int N, int N2 = 0);
+//template <class T> double getAvg(T *tosum, int N, int N2 = 0);
+//template <class T> double getSum(T *tosum, int N, int N2 = 0);
+
+template <class T>
+double getSum(T *tosum, int N, int N2=0) {
+    double sum = 0;
+    if (N2 == 0) {
+        for (int i = 0; i < N; i++) {
+            sum += (double)tosum[i];
+        }
+    }
+    else {
+        for (int i = N; i < N2; i++) {
+            sum += (double)tosum[i];
+        }
+    }
+    return (double)sum;
+}
+
+template <class T>
+double getAvg(T *tosum, int N, int N2=0) {
+    if (N2>0) return (float) getSum(tosum, N, N2) / (N2-N);
+    else return (float) getSum(tosum, N) / N;
+}
+
 
 double getAvg2D( double **tosum, int N );
 void fileExists(const char* pathname);

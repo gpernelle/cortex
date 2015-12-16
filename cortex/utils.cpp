@@ -220,27 +220,6 @@ void MovingAverage::compute(double instantMeanG, int t, int T) {
 /*****************************************************************************
  * UTILITY FNs
  *****************************************************************************/
-template <class T>
-double getSum(T *tosum, int N, int N2) {
-    double sum = 0;
-    if (N2 == 0) {
-        for (int i = 0; i < N; i++) {
-            sum += (double)tosum[i];
-        }
-    }
-    else {
-        for (int i = N; i < N2; i++) {
-            sum += (double)tosum[i];
-        }
-    }
-    return (double)sum;
-}
-
-template <class T>
-double getAvg(T *tosum, int N, int N2) {
-    if (N2>0) return (float) getSum(tosum, N, N2) / (N2-N);
-    else return (float) getSum(tosum, N) / N;
-}
 
 //double getSum(double *tosum, int N) {
 //    double sum = 0;
