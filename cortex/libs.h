@@ -19,6 +19,7 @@
 #include <vector>
 #include <math.h>
 #include <cmath>
+#include <complex>
 #include <algorithm>
 #include <numeric>
 #include <iterator>
@@ -28,7 +29,6 @@
 #include <iomanip>
 #include <time.h>
 #include <fftw3.h>
-#include <stdio.h>
 #include "constants.h"
 //#include <boost/nondet_random.hpp>
 //#include <boost/random.hpp>
@@ -36,6 +36,7 @@
 //#include <libiomp/omp.h>
 
 using namespace std;
+typedef complex<double> dcomp;
 typedef std::vector<int>::iterator iter;
 
 #endif

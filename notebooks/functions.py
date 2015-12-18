@@ -214,7 +214,7 @@ def plotPTSH(before, after,binsize, h, s, it, DIRECTORY, S, N):
     print(DIRECTORY + extension + '_PTSH.pdf')
     plt.savefig(DIRECTORY + extension + '_PTSH.pdf')
 
-def plotDiagram(figure, ax, dataframe, title, column, filename, save=True, front=False):
+def plotDiagram(figure, ax, dataframe, title, column, filename, save=True, front=False, gridsize=60):
     ax.set_ylim(ymin=50, ymax=400)
     # Set color transparency (0: transparent; 1: solid)
     a = 1
@@ -222,7 +222,7 @@ def plotDiagram(figure, ax, dataframe, title, column, filename, save=True, front
     customcmap = [(x/24.0,  x/48.0, 0.05) for x in range(len(dataframe))]
 
     dataframe.plot(kind="hexbin",
-                   y='nuEI', x='gammaC', C=column,gridsize=60, ax=ax, alpha=a, legend=False, colormap=cx4,
+                   y='nuEI', x='gammaC', C=column,gridsize=gridsize, ax=ax, alpha=a, legend=False, colormap=cx4,
                           # edgecolor='w',
             title=title)
     ax.set_title(title, y=1.03)

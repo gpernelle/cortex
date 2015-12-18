@@ -31,6 +31,8 @@ math.h
 -
 cmath
 -
+complex
+-
 algorithm
 -
 numeric
@@ -48,8 +50,6 @@ iomanip
 time.h
 -
 fftw3.h
--
-stdio.h
 -
 constants.h
 /Users/GP1514/Dropbox/ICL-2014/Code/C-Code/cortex/cortex/constants.h

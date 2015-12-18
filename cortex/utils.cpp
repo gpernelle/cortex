@@ -8,44 +8,6 @@
 
 #include "utils.h"
 
-
-int Util::writedata(string name, vector<double> towrite) {
-    int glob = sim.GLOB * 1;
-    stringstream sstm;
-    sstm << name << "_g-" << sim.gamma_c << "_TImean-" << (sim.TImean) << "_T-" << (sim.T * sim.dt) << "_Glob-" <<
-    glob;
-    sstm << "_dt-" << sim.dt << "_N-" << sim.N << "_S-" << sim.stimulation << "_WII-" << sim.GammaII;
-    if (sim.LTD) sstm << "_LTD-" << sim.LTD;
-    if (sim.LTP) sstm << "_LTP-" << sim.LTP;
-
-//    //test if path exists
-//    fileExists(sim.path.c_str());
-    const string path_x = sim.path + sstm.str() + sim.ext;
-    ofstream out_x(path_x, ios::out | ios::binary);
-    std::ostream_iterator<double> output_iterator_x(out_x, "\n");
-    std::copy(towrite.begin(), towrite.end(), output_iterator_x);
-//    fileExists(path_x.c_str());
-    return 0;
-}
-
-int Util::writedataint(string name, vector<int> towrite) {
-    int glob = sim.GLOB * 1;
-    stringstream sstm;
-    sstm << name << "_g-" << sim.gamma_c << "_TImean-" << (sim.TImean) << "_T-" << (sim.T * sim.dt) << "_Glob-" <<
-    glob;
-    sstm << "_dt-" << sim.dt << "_N-" << sim.N << "_S-" << sim.stimulation << "_WII-" << sim.GammaII;
-    if (sim.LTD) sstm << "_LTD-" << sim.LTD;
-    if (sim.LTP) sstm << "_LTP-" << sim.LTP;
-
-//    //test if path exists
-    fileExists(sim.path.c_str());
-    const string path_x = sim.path + sstm.str() + sim.ext;
-    ofstream out_x(path_x, ios::out | ios::binary);
-    std::ostream_iterator<int> output_iterator_x(out_x, "\n");
-    std::copy(towrite.begin(), towrite.end(), output_iterator_x);
-    return 0;
-}
-
 void Simulation::initData() {
     PLAST_RULE = "nonbursting";
 //    PLAST_RULE = "spiking";
@@ -59,6 +21,7 @@ void Simulation::initData() {
     CONSOLE = false;
     SOFT = false;
     GLOB = true;
+    RESONANCE = false;
 
     LTD = 0;
     LTP = 0;
@@ -221,45 +184,6 @@ void MovingAverage::compute(double instantMeanG, int t, int T) {
  * UTILITY FNs
  *****************************************************************************/
 
-//double getSum(double *tosum, int N) {
-//    double sum = 0;
-//    for (int i = 0; i < N; i++) {
-//        sum += tosum[i];
-//    }
-//    return (float)sum;
-//}
-
-//double getSumB(double *tosum, int N1, int N2) {
-//    double sum = 0;
-//    for (int i = N1; i < N2; i++) {
-//        sum += tosum[i];
-//    }
-//    return sum;
-//}
-
-//double getSum(int *tosum, int N) {
-//    double sum = 0;
-//    for (int i = 0; i < N; i++) {
-//        sum += tosum[i];
-//    }
-//    return sum;
-//}
-
-//double getAvg(double *tosum, int N) {
-//    return getSum(tosum, N) / N;
-//}
-//
-//double getAvgB(double *tosum, int N1, int N2) {
-//    return getSumB(tosum, N1, N2) / (N2-N1);
-//}
-//
-//
-//double getAvg(int *tosum, int N) {
-//    return getSum(tosum, N) / N;
-//}
-
-
-//
 double getAvg2D(double **tosum, int N) {
     double result = 0;
     for (int i = 0; i < N; i++) {

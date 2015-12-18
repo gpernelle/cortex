@@ -29,6 +29,7 @@ public:
     bool SPIKES;
     bool CONSOLE;
     bool SOFT;
+    bool RESONANCE;
     int d1, d2, d3;
     int T;
     int T1;
@@ -46,6 +47,7 @@ public:
     std::string directory;
     std::string ext;
     std::string path;
+    std::string model;
 
     double Tsig;
     double tau_I;
@@ -81,8 +83,29 @@ public:
 class Util {
 public:
     Simulation sim;
-    int writedata(string name ,vector<double> towrite);
-    int writedataint(string name ,vector<int> towrite);
+    //    int writedata(string name ,vector<double> towrite);
+    //    int writedataint(string name ,vector<int> towrite);
+
+    template <class T>
+    int writedata(string name, vector<T> towrite) {
+        int glob = sim.GLOB * 1;
+        stringstream sstm;
+        sstm << name << "_g-" << sim.gamma_c << "_TImean-" << (sim.TImean) << "_T-" << (sim.T * sim.dt) << "_Glob-" <<
+        glob;
+        sstm << "_dt-" << sim.dt << "_N-" << sim.N << "_S-" << sim.stimulation << "_WII-" << sim.GammaII;
+        if (sim.LTD) sstm << "_LTD-" << sim.LTD;
+        if (sim.LTP) sstm << "_LTP-" << sim.LTP;
+        sstm << "_model-"<< sim.model;
+
+        //    //test if path exists
+        //    fileExists(sim.path.c_str());
+        const string path_x = sim.path + sstm.str() + sim.ext;
+        ofstream out_x(path_x, ios::out | ios::binary);
+        std::ostream_iterator<T> output_iterator_x(out_x, "\n");
+        std::copy(towrite.begin(), towrite.end(), output_iterator_x);
+        //    fileExists(path_x.c_str());
+        return 0;
+    }
 
 
 };

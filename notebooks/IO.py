@@ -7,14 +7,15 @@ class IO:
         self.data_path = ""
         self.executable_name = ""
 
-    def runSimulation(self, N, i, G ,S, d1, d2, d3, before, after, s, WII, LTP, LTD):
+    def runSimulation(self, N, i, G ,S, d1, d2, d3, before, after, s, WII, LTP, LTD, model):
         ext = "_%d.txt"%i
         sh.cd(self.executable_path)
         subprocess.check_output([self.executable_name, '-N', str(N), '-ext', str(ext),
                                 '-d1', str(d1), '-d2', str(d2), '-d3', str(d3) ,
                                 '-before', str(before), '-after', str(after),
                                  '-S', str(S),  '-G', str(G), '-s', str(s),
-                                 '-WII', str(WII), '-LTP', str(LTP), '-LTD', str(LTD)])
+                                 '-WII', str(WII), '-LTP', str(LTP), '-LTD', str(LTD),
+                                  '-model', model])
 
 
     def readSimulationSSP1(self, N, i, G,S, d1, d2, d3, before, after):
@@ -34,7 +35,7 @@ class IO:
         ssp1 = np.fromfile(ssp1_p, dtype='double', count = -1, sep=" ")
         return ssp1
 
-    def readSimulation(self, N, i, G,S, d1, d2, d3, before, after, WII, LTP, LTD):
+    def readSimulation(self, N, i, G,S, d1, d2, d3, before, after, WII, LTP, LTD, model):
         T = d1+d2+d3
         DIRECTORY = self.data_path
         # simulation parameters
@@ -45,7 +46,8 @@ class IO:
         dt = 0.25
         ext = "_%d.txt"%i
         # compute the paths of data files.
-        extension = "_g-%.6g_TImean-%d_T-%d_Glob-%d_dt-0.25_N-%d_S-%d_WII-%d_LTD-%.6g_LTP-%.6g" % (g, TImean,T, glob, N, S, WII, LTD, LTP)
+        extension = "_g-%.6g_TImean-%d_T-%d_Glob-%d_dt-0.25_N-%d_S-%d_WII-%d_LTD-%.6g_LTP-%.6g_model-%s" \
+                    % (g, TImean,T, glob, N, S, WII, LTD, LTP, model)
         extension += ext
 
         path_x  = DIRECTORY + "spike_x" + extension

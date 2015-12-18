@@ -32,6 +32,11 @@ int main(int argc, const char * argv[])
     double th_q;
     double LTP;
     double LTD;
+    double f = 0; //frequence for resonance computation
+    dcomp res_val = 0; //resonance =  spike sum weighted with external oscillatory phase
+    double cosVal = 0;
+    int b = 2; // for TRN eq
+    dcomp im =-1;
     string namecsv;
     Simulation *sim1;
     sim1 = &util.sim;
@@ -88,10 +93,12 @@ int main(int argc, const char * argv[])
                 sim1->SPIKES = false;
                 sim1->FOURIER = true;
 
+            } else if (!strcmp(argv[i], "-f")) {
+                f = pow(10,atof(argv[i + 1]));
+                sim1->RESONANCE = true;
+            } else if (!strcmp(argv[i], "-model")) {
+                sim1->model = string(argv[i + 1]);
             }
-//            cout << std::string(100, '*')<< endl;
-//            cout <<  "Arguments read"<< endl;
-//            cout << std::string(100, '*')<< endl;
         }
     }
     sim1->initDuration();
@@ -191,7 +198,7 @@ int main(int argc, const char * argv[])
     normal_distribution<> dist(0.0, 1.0);
 
 
-    if (!sim1->CONSOLE) {
+    if (!sim1->CONSOLE and argc==1) {
         std::cout << "Neural Network Initialization\n";
         cout << "*****************************" << endl;
         cout << "FACT: "<< plast.FACT << endl;
@@ -310,7 +317,10 @@ int main(int argc, const char * argv[])
          */
 
         //        #pragma omp parallel for num_threads(NUM_THREADS)
-
+        if (sim1-> RESONANCE) {
+            cosVal = 100.0 * cos(2.0 * M_PI * f * (t/1000.0 * dt));
+//            if (t < 100) cout << cosVal << "\t" << 2 * M_PI * f * (t/1000.0 * dt) << endl;
+        }
         for(int i=0; i < sim1->N ; i++){
             /*
              * 0 < i < NI : FS inhibitbory cells
@@ -335,47 +345,79 @@ int main(int argc, const char * argv[])
                         Igap[i] += (plast.VgapLocal[i][k]) * (v[k] - v[i]);
                     }
                 }
-                I[i] = Ieff[i] + Ichem[i] + Igap[i];
-                // TRN EQUATIONS --------------------------------------
-                //  v[i] = v[i] + dt * (1./40.) * (0.25 * (pow(v[i],2) + 110 * v[i] + 45*65) - u[i] + I[i]);  //TRN eq
-                //  u[i] = u[i] + dt * 0.015 * ( b * (v[i] + 65) - u[i] );  // TRN eq
-                // TRN EQUATIONS --------------------------------------
-
-                // FS EQ --------------------------------------
-//                v[i] += dt/20 * ((v[i]+55)*(v[i]+40) - u[i] + I[i]);
-//                u[i] += dt * 0.2 * ( 0.025*pow(v[i]+55,3) * (v[i] > -55) - u[i] );
-//                vv[i] = v[i] > 25.0;
-//                if(vv[i]) {
-//                    v[i] = -45; // FS
-//                }
-//                 FS mod1 --------------------------------------
-                v[i] += dt/20 * ((v[i]+55)*(v[i]+40) - u[i] + 2.5*I[i]);
-                u[i] += dt * 0.037 * ( 0.05*pow((v[i]+55),3) * (v[i] > -55) - u[i] );
-                vv[i] = v[i] > 20.0;
-                if(vv[i]) {
-                    v[i] = -41;
-                    u[i] += -20;
+                if (sim1->RESONANCE) {
+                    Ieff[i] = Iback[i] / sqrt(1/(2*(sim1->tau_I/dt))) * sim1->Tsig + sim1->TImean + cosVal;
+                    I[i] = Ieff[i];
                 }
-//                // FS mod2 --------------------------------------
-//                v[i] += dt/25 * ((v[i]+55)*(v[i]+40) - u[i] + I[i]);
-//                u[i] += dt * 0.037 * ( 0.04*pow((v[i]+55),3) * (v[i] > -55) - u[i] );
-//                vv[i] = v[i] > 20.0;
-//                if(vv[i]) {
-//                    v[i] = -43;
-//                }
-//                // FS mod3 --------------------------------------
-//                v[i] += dt/20 * ((v[i]+55)*(v[i]+40) - u[i] + I[i]);
-//                u[i] += dt * 0.08 * ( 0.02*pow((v[i]+55),3) * (v[i] > -55) - u[i] );
-//                vv[i] = v[i] > 0.0;
-//                if(vv[i]) {
-//                    v[i] = -45;
-//                    u[i]+=0;
-//                }
+                else {
+                    I[i] = Ieff[i] + Ichem[i] + Igap[i];
+                }
+
+
+                if (sim1->model == "cc-tchu") {
+                    v[i] += dt / 100 * (-v[i] - 20 * u[i] + I[i]);
+                    u[i] += dt / 20 * (-u[i] + 4.5 * v[i]);
+                    vv[i] = v[i] > 4;
+                } else if (sim1->model == "cc-izh"){
+                    v[i] += dt / 50 * ((v[i] + 60) * (v[i] + 40) - 20*u[i] + 30 * I[i]);
+                    u[i] += dt * 0.03 * ((v[i] + 55) - u[i]);
+                    vv[i] = v[i] > 25.0;
+                    if (vv[i]) {
+                        v[i] = -40;
+                        u[i] += 150;
+                    }
+                } else if (sim1->model=="TRN") {
+                    // TRN EQUATIONS --------------------------------------
+                    v[i] = v[i] + dt * (1./40.) * (0.25 * (pow(v[i],2) + 110 * v[i] + 45*65) - u[i] + I[i]);
+                    u[i] = u[i] + dt * 0.015 * ( b * (v[i] + 65) - u[i] );
+                    vv[i] = v[i] > 0.0;
+                    if (vv[i]) {
+                        v[i] = -55;
+                        u[i] += 50;
+                    }
+                    b = 10 * (v[i] < -70) + 2 * (v[i] >= -70);
+                } else if (sim1->model=="FS") {
+                    // FS EQ --------------------------------------
+                    v[i] += dt/20 * ((v[i]+55)*(v[i]+40) - u[i] + I[i]);
+                    u[i] += dt * 0.2 * ( 0.025*pow(v[i]+55,3) * (v[i] > -55) - u[i] );
+                    vv[i] = v[i] > 25.0;
+                    if(vv[i]) {
+                        v[i] = -45;
+                    }
+                }
+                else if (sim1->model=="mod1") {
+                    // FS EQ MOD 1 --------------------------------------
+                    v[i] += dt / 20 * ((v[i] + 55) * (v[i] + 40) - u[i] + 2.5 * I[i]);
+                    u[i] += dt * 0.037 * (0.05 * pow((v[i] + 55), 3) * (v[i] > -55) - u[i]);
+                    vv[i] = v[i] > 20.0;
+                    if (vv[i]) {
+                        v[i] = -41;
+                        u[i] += -20;
+                    }
+                } else if (sim1->model=="mod2") {
+                    // FS EQ MOD 2 --------------------------------------
+                    v[i] += dt/25 * ((v[i]+55)*(v[i]+40) - u[i] + I[i]);
+                    u[i] += dt * 0.037 * ( 0.04*pow((v[i]+55),3) * (v[i] > -55) - u[i] );
+                    vv[i] = v[i] > 20.0;
+                    if(vv[i]) {
+                        v[i] = -43;
+                    }
+                } else if (sim1->model=="mod3") {
+                    // FS EQ MOD 3 --------------------------------------
+                    v[i] += dt/20 * ((v[i]+55)*(v[i]+40) - u[i] + I[i]);
+                    u[i] += dt * 0.08 * ( 0.02*pow((v[i]+55),3) * (v[i] > -55) - u[i] );
+                    vv[i] = v[i] > 0.0;
+                    if(vv[i]) {
+                        v[i] = -45;
+                        u[i]+=0;
+                    }
+                }
 
                 /***************************************************
                  * SAVE SPIKES
                  ***************************************************/
                 if(vv[i]) {
+
                     NewNbSpikesI++;
 
                     if ( !sim1->CONSOLE and sim1->SPIKES and  sim1->saveTime(t))
@@ -460,6 +502,11 @@ int main(int argc, const char * argv[])
 
         // compute some stats
         //
+        if (sim1->RESONANCE) {
+            res_val += getSum(vv,sim1->NI)*exp(2.0*M_PI*im*f*(t/1000.0*dt));
+        }
+
+
         NbSpikesI = NewNbSpikesI;
         NbSpikesE = NewNbSpikesE;
         meanBurst += getAvg<double>(p, sim1->NI);
@@ -552,7 +599,7 @@ int main(int argc, const char * argv[])
 
     // SAVE DATA
     //
-    if (!sim1->CONSOLE) {
+    if (!sim1->CONSOLE and !sim1->RESONANCE) {
         // SAVE DATA NORMAL MODE
         //
         util.writedata("gamma", mvgamma.outputVec);
@@ -561,11 +608,13 @@ int main(int argc, const char * argv[])
         util.writedata("p", pm);
         util.writedata("q", qm);
         util.writedata("LowSp", lm);
-        util.writedataint("spike_x", spikes_idx);
-        util.writedataint("spike_y", spikes_idy);
-        util.writedataint("spike_x_tc", spikes_idx_tc);
-        util.writedataint("spike_y_tc", spikes_idy_tc);
+        util.writedata("spike_x", spikes_idx);
+        util.writedata("spike_y", spikes_idy);
+        util.writedata("spike_x_tc", spikes_idx_tc);
+        util.writedata("spike_y_tc", spikes_idy_tc);
         util.writedata("vm", vm);
+//        util.writedata("resonance", abs(res_val));
+        cout << "resonance: " <<  abs(res_val) << "\t" << abs(res_val)/T/N/dt << endl;
         if (sim1->FOURIER) {
 //            util.writedata("vm", vm);
 //            util.writedata("freq", FFT.freq);
@@ -594,7 +643,7 @@ int main(int argc, const char * argv[])
             cout << "gamma_c avg : " << meanG/counter << endl;
         }
     }
-    else {
+    else if (sim1->CONSOLE) {
         // SAVE DATA CONSOLE MODE
         //
         if (sim1->FOURIER) {
@@ -604,12 +653,19 @@ int main(int argc, const char * argv[])
         }
         
         double resultCorr = correlation.computeCorrelation(spikeTimesCor, dt);
-        string path_csv =  "/Users/"+sim1->computer+sim1->directory+namecsv+".csv";
+        string path_csv =  sim1->root+sim1->computer+sim1->directory+namecsv+".csv";
         ofstream csvFile(path_csv, std::ofstream::out | std::ofstream::app);
         csvFile << plast.Vgap*sim1->NI << ";" << sim1->TImean << ";" << resultCorr << ";" << meanSpike/T << ";" << meanSpikeNonBurst/T << ";" << meanBurst/T <<";"<< FFT.fftFreq<<";"<< FFT.fftPower<< endl;
         cout << "Data written: " << plast.Vgap*N << " " << sim1->TImean << "\tCorr:" << resultCorr ;
         cout << "\tSp:\t" << meanSpike/T << "\tB:\t" << meanBurst/T;
         cout << "\tfreq: " << FFT.fftFreq << "\tpower: " << FFT.fftPower <<endl;
+    }
+    if (sim1->RESONANCE) {
+        string path_csv =  sim1->root+sim1->computer+sim1->directory+"resonance.csv";
+        ofstream csvFile(path_csv, std::ofstream::out | std::ofstream::app);
+        csvFile << sim1->model<< ";" << f << ";" << sim1->stimulation+50.0 << ";" << abs(res_val) << ";" << endl;
+        cout << "Data written: " << f<< "\t" << abs(res_val) << endl ;
+
     }
     
     
