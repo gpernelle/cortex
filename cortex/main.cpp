@@ -58,7 +58,7 @@ int main(int argc, const char * argv[])
                 sim1->gamma_c = atof(argv[i + 1]);
             } else if (!strcmp(argv[i], "-N")) {
                 sim1->N = atoi(argv[i + 1]);
-                sim1->NE = int(0*sim1->N);
+                sim1->NE = int(0.8*sim1->N);
                 sim1->NI = sim1->N - sim1->NE;
             } else if (!strcmp(argv[i], "-ext")) {
                 sim1->ext = argv[i + 1];
@@ -365,6 +365,14 @@ int main(int argc, const char * argv[])
                     if (vv[i]) {
                         v[i] = -40;
                         u[i] += 150;
+                    }
+                } else if (sim1->model == "gp-izh"){
+                    v[i] += dt / 15 * ((v[i] + 60) * (v[i] + 50) - 20*u[i] + 8 * I[i]);
+                    u[i] += dt * 0.03 * ((v[i] + 55) - u[i]);
+                    vv[i] = v[i] > 25.0;
+                    if (vv[i]) {
+                        v[i] = -40;
+                        u[i] += 50;
                     }
                 } else if (sim1->model=="TRN") {
                     // TRN EQUATIONS --------------------------------------

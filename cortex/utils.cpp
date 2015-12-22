@@ -19,7 +19,7 @@ void Simulation::initData() {
     FOURIER = true;
     SPIKES = true;
     CONSOLE = false;
-    SOFT = false;
+    SOFT = true;
     GLOB = true;
     RESONANCE = false;
 
@@ -51,10 +51,10 @@ void Simulation::initData() {
     Tsig = 60.0; // Variance of current in the inhibitory neurons
     tau_I = 5.0; // Time constant to filter the synaptic inputs
     tau_syn = 5.0;
-    GammaII = 1400.00; // I to I connectivity
-    GammaIE = -1000.00; // I to E connectivity
-    GammaEE = 5000.00; // E to E connectivity
-    GammaEI = 1400.00; // E to I connectivity
+    GammaII = 500.00; // I to I connectivity
+    GammaIE = -500.00; // I to E connectivity
+    GammaEE = 500.00; // E to E connectivity
+    GammaEI = 500.00; // E to I connectivity
 
     TC_Tsig = 70.0;
     TC_tau_I = 5.0;
@@ -104,7 +104,7 @@ void Plasticity::initData() {
 
 
 //    VgapIN = sim.gamma_c / sim.NI;
-    VgapIN = 8.0 / sim.NI;
+    VgapIN = 4.2 / sim.NI;
     Vgap = sim.gamma_c / sim.NI;
 
     VgapLocal = new double *[sim.NI];
