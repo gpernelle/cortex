@@ -16,3 +16,20 @@ def chart(list1):
     plt.show()
 
 
+def readDataFile(path):
+    '''
+    Read data extracted form graph with GraphClick
+    :param path: file path
+    :return: x,y
+    '''
+    x=[]
+    y=[]
+    with open(path,'r') as f:
+        reader = csv.reader(f,delimiter='\t')
+        for row in reader:
+            try:
+                x.append(float(row[0]))
+                y.append(float(row[1]))
+            except:
+                pass
+    return x,y

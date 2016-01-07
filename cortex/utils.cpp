@@ -15,13 +15,14 @@ void Simulation::initData() {
     SPINDLE_LOWPASS = false;
     COMPUTE_PLAST = true;
     MIN_PLAST_THRESH = false;
-    CORRELATION = false;
+    CORRELATION = true;
     FOURIER = true;
     SPIKES = true;
     CONSOLE = false;
     SOFT = true;
     GLOB = true;
     RESONANCE = false;
+    DEBUG = true;
 
     LTD = 0;
     LTP = 0;
@@ -39,6 +40,7 @@ void Simulation::initData() {
     NI = (int) 4;
     NE = (int) 20;
     N = NE + NI;
+    r = 0; //when r = 0, simulation with only inhibitory neurons
     stimulation = 70;
 
 
@@ -67,8 +69,11 @@ void Simulation::initData() {
 
     gamma_c = 3;    // Initial gap junction strength
     TImean = 50.0; // Mean imput current in inhibitory neurons.
+    TImean = 0.0; // Mean imput current in inhibitory neurons.
+    TEmean = 72.0; // Mean input current in inhibitory neurons.
     TEmean = 72.0; // Mean input current in inhibitory neurons.
     TIMeanIN = TImean;
+    TEMeanIN = TEmean;
 //    cout << "Data initialized " << endl;
 }
 
@@ -104,7 +109,7 @@ void Plasticity::initData() {
 
 
 //    VgapIN = sim.gamma_c / sim.NI;
-    VgapIN = 4.2 / sim.NI;
+    VgapIN = 5.0 / sim.NI;
     Vgap = sim.gamma_c / sim.NI;
 
     VgapLocal = new double *[sim.NI];
@@ -338,6 +343,12 @@ double Corr::correlationPairwise(deque<int> list1, deque<int> list2, double sig,
     }
     else {
         return 0;
+    }
+}
+
+void pl(bool CONSOLE, int line) {
+    if(CONSOLE){
+        cout << line << endl;
     }
 }
 

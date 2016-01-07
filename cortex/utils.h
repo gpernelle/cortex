@@ -30,6 +30,7 @@ public:
     bool CONSOLE;
     bool SOFT;
     bool RESONANCE;
+    bool DEBUG;
     int d1, d2, d3;
     int T;
     int T1;
@@ -39,6 +40,7 @@ public:
     int after;
     double dt;
     int N;
+    double r;
     int NI;
     int NE;
     int stimulation;
@@ -73,6 +75,7 @@ public:
     double TImean;
     double TEmean;
     double TIMeanIN;
+    double TEMeanIN;
 
     void initData();
     void initDuration();
@@ -92,7 +95,7 @@ public:
         stringstream sstm;
         sstm << name << "_g-" << sim.gamma_c << "_TImean-" << (sim.TImean) << "_T-" << (sim.T * sim.dt) << "_Glob-" <<
         glob;
-        sstm << "_dt-" << sim.dt << "_N-" << sim.N << "_S-" << sim.stimulation << "_WII-" << sim.GammaII;
+        sstm << "_dt-" << sim.dt << "_N-" << sim.N << "_r-" << sim.r << "_S-" << sim.stimulation << "_WII-" << sim.GammaII;
         if (sim.LTD) sstm << "_LTD-" << sim.LTD;
         if (sim.LTP) sstm << "_LTP-" << sim.LTP;
         sstm << "_model-"<< sim.model;
@@ -219,6 +222,8 @@ public:
 
 double gaussian(double x, double mu, double sig, double dt);
 double multigaussian (deque<int> listSpike, int x, double sig, double dt);
+
+void pl(bool CONSOLE, int line);
 
 
 #endif /* defined(__cortex__utils__) */

@@ -40,7 +40,7 @@ int main(int argc, const char * argv[])
     string namecsv;
     Simulation *sim1;
     sim1 = &util.sim;
-
+    pl(sim1->DEBUG, __LINE__);
     sim1->initData();
 //    cout << std::string(100, '*')<< endl;
 //    cout << "BEGIN SIMULATION" << endl;
@@ -58,8 +58,8 @@ int main(int argc, const char * argv[])
                 sim1->gamma_c = atof(argv[i + 1]);
             } else if (!strcmp(argv[i], "-N")) {
                 sim1->N = atoi(argv[i + 1]);
-                sim1->NE = int(0.8*sim1->N);
-                sim1->NI = sim1->N - sim1->NE;
+            } else if (!strcmp(argv[i], "-r")) {
+                sim1->r = atof(argv[i + 1]);
             } else if (!strcmp(argv[i], "-ext")) {
                 sim1->ext = argv[i + 1];
             } else if (!strcmp(argv[i], "-d1")) {
@@ -101,12 +101,14 @@ int main(int argc, const char * argv[])
             }
         }
     }
+    sim1->NE = int(sim1->r*sim1->N);
+    sim1->NI = sim1->N - sim1->NE;
     sim1->initDuration();
     vector<double> g {};
     MovingAverage mvgamma(g);
     Fourier FFT;
     Corr correlation;
-
+    pl(sim1->DEBUG, __LINE__);
     const int N = sim1->N;
     double dt = sim1->dt;
     int T = sim1->T;
@@ -128,7 +130,7 @@ int main(int argc, const char * argv[])
     double meanRON_I = 0;
     int counter = 0;
     double I_TC = 0;
-
+    pl(sim1->DEBUG, __LINE__);
     double Vsum;
     int NbSpikesI = 0;
     int NbSpikesE = 0;
@@ -164,7 +166,7 @@ int main(int argc, const char * argv[])
     double meanSpikeNonBurst = 0;
 
     double alpha = dt / (tau_q + dt);
-
+    pl(sim1->DEBUG, __LINE__);
     // TC cortex COMM
     double tau_syn_tc = 20;
     double WEE = 1;
@@ -190,7 +192,7 @@ int main(int argc, const char * argv[])
         plast.A_gapP = LTP;
         sim1->LTP = LTP;
     }
-
+    pl(sim1->DEBUG, __LINE__);
     // random number generation
     //
     random_device rd;
@@ -213,7 +215,7 @@ int main(int argc, const char * argv[])
         cout << "t1: "<< sim1->T1 - sim1->before/dt << "\tt2: " << sim1->T1 + sim1->after/dt << "\tt3: " << sim1->T2 - sim1->before/dt << "\tt4: " << sim1->T2+ sim1->after/dt << "\tt5: " << sim1->T3-sim1->before/dt << endl;
 
     }
-
+    pl(sim1->DEBUG, __LINE__);
     std::fill(v,v+N,-60); // init v to -60mV
 
     // Init connection matrix
@@ -233,7 +235,7 @@ int main(int argc, const char * argv[])
     //
     time (&starttime);
     time (&previoustime);
-
+    pl(sim1->DEBUG, __LINE__);
     /***************************************************
      * INTEGRATION OVER TIME
      ***************************************************/
@@ -247,6 +249,7 @@ int main(int argc, const char * argv[])
             }
             else if (t>sim1->T1 and t<sim1->T2) { // second phase of the simulation
                 sim1->TImean =   sim1->TIMeanIN + sim1->stimulation;
+                sim1->TEmean =   sim1->TEMeanIN + sim1->stimulation;
             }
             else if (t>=sim1->T2) { // last phase of the simulation until T3
                 sim1->TImean = sim1->TIMeanIN;
@@ -254,8 +257,8 @@ int main(int argc, const char * argv[])
         }
         else {
             sim1->TImean = sim1->TIMeanIN + sim1->stimulation;
+            sim1->TEmean = sim1->TEMeanIN + sim1->stimulation;
         }
-
         /***************************************************
          * PRINT PROGRESS
          ***************************************************/
@@ -292,7 +295,6 @@ int main(int argc, const char * argv[])
          * cortex:
          * RS cells: excitatory neurons
          * FS cells: inhibitory neurons
-         * CH neurons?
          *
          * FS (p299): 20 v' = (v+55)(v+40) - u +I,
          *      u' = 0.2(U(v) - u )
@@ -308,7 +310,7 @@ int main(int argc, const char * argv[])
          *      if v>=35, then v <- -50, u <- u+100
          *
          *
-         * FS (nov 2003) publications:
+         * FS (nov 2003) publication:
          *      v' = 0.04v**2 + 5v + 140 -u + I
          *      u' = a (bv -u)
          *      if v>30, then v <- c and u <- u+d
@@ -321,6 +323,7 @@ int main(int argc, const char * argv[])
             cosVal = 100.0 * cos(2.0 * M_PI * f * (t/1000.0 * dt));
 //            if (t < 100) cout << cosVal << "\t" << 2 * M_PI * f * (t/1000.0 * dt) << endl;
         }
+        pl(sim1->DEBUG and t<=3 , __LINE__);
         for(int i=0; i < sim1->N ; i++){
             /*
              * 0 < i < NI : FS inhibitbory cells
@@ -366,9 +369,17 @@ int main(int argc, const char * argv[])
                         v[i] = -40;
                         u[i] += 150;
                     }
-                } else if (sim1->model == "gp-izh"){
+                } else if (sim1->model == "gp-izh0"){
                     v[i] += dt / 15 * ((v[i] + 60) * (v[i] + 50) - 20*u[i] + 8 * I[i]);
                     u[i] += dt * 0.03 * ((v[i] + 55) - u[i]);
+                    vv[i] = v[i] > 25.0;
+                    if (vv[i]) {
+                        v[i] = -40;
+                        u[i] += 50;
+                    }
+                } else if (sim1->model == "gp-izh"){
+                    v[i] += dt / 15 * ((v[i] + 60) * (v[i] + 50) - 20*u[i] + 8 * I[i]);
+                    u[i] += dt * 0.044 * ((v[i] + 55) - u[i]);
                     vv[i] = v[i] > 25.0;
                     if (vv[i]) {
                         v[i] = -40;
@@ -531,6 +542,7 @@ int main(int argc, const char * argv[])
         /***************************************************
          * PLASTICITY
          ***************************************************/
+        pl(sim1->DEBUG and t<3, __LINE__);
         if (!sim1->CONSOLE and sim1->COMPUTE_PLAST) {
             if(t % int(T/1000) == 0 ){
                 stimulation.push_back(sim1->TImean);
@@ -562,21 +574,22 @@ int main(int argc, const char * argv[])
         /***************************************************
          * CORRELATION
          ***************************************************/
+        pl(sim1->DEBUG and t<3, __LINE__);
         if (sim1->CORRELATION and !sim1->CONSOLE){
-            if(t % int(T/1000) == 0 and t>200/dt ){
-                double corr = correlation.computeCorrelation(spikeTimesCor, dt);
-                corrVect.push_back(corr);
+            if(t % int(T/1000) == 0 and t>200/dt and N>100 ){
+                corrVect.push_back(correlation.computeCorrelation(spikeTimesCor, dt));
             }
         }
         
         /***************************************************
          * SAVE SPIKE MEAN AND CURRENT AT TRANSITIONS
          ***************************************************/
+        pl(sim1->DEBUG and t<3, __LINE__);
         if (!sim1->CONSOLE) {
-            ssp.push_back(NbSpikesI);
+            ssp.push_back(NbSpikesI+NbSpikesE);
 //            if (t < sim1->T1 + sim1->after and t > sim1->T1 - sim1->before){
 //                current1.push_back( getAvg(I, N) );
-//                ssp1.push_back(NbSpikes);
+//                ssp1.push_back(NbSpikes);ma
 //            }
 //            else if (t < sim1->T2 + sim1->after and t > sim1->T2 - sim1->before){
 //                current2.push_back(getAvg(I, N));
@@ -588,7 +601,7 @@ int main(int argc, const char * argv[])
 //            }
         }
     }
-    
+    pl(sim1->DEBUG, __LINE__);
     /***************************************************
      * END OF SIMULATION - SAVE DATA
      ***************************************************/
@@ -621,6 +634,8 @@ int main(int argc, const char * argv[])
         util.writedata("spike_x_tc", spikes_idx_tc);
         util.writedata("spike_y_tc", spikes_idy_tc);
         util.writedata("vm", vm);
+        util.writedata("ssp", ssp);
+
 //        util.writedata("resonance", abs(res_val));
         cout << "resonance: " <<  abs(res_val) << "\t" << abs(res_val)/T/N/dt << endl;
         if (sim1->FOURIER) {
@@ -633,7 +648,6 @@ int main(int argc, const char * argv[])
 //        util.writedata("current2", current2);
 //        util.writedata("current3", current3);
         
-        util.writedata("ssp", ssp);
 //        util.writedata("ssp1", ssp1);
 //        util.writedata("ssp2", ssp2);
 //        util.writedata("ssp3", ssp3);
