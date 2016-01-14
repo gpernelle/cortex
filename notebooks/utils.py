@@ -8,7 +8,7 @@ import time as t
 
 import pandas as pd
 import pylab as plt
-import re, csv, os, datetime, os, sys, cubehelix, multiprocessing, sh, subprocess
+import re, csv, os, datetime, os, sys, cubehelix, multiprocessing, sh, subprocess, math
 import blaze
 from matplotlib import gridspec
 from matplotlib.pyplot import cm 

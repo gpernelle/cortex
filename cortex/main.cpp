@@ -75,7 +75,7 @@ int main(int argc, const char * argv[])
             } else if (!strcmp(argv[i], "-S")) {
                 sim1->stimulation = atoi(argv[i + 1]);
             } else if (!strcmp(argv[i], "-s")) {
-                sim1->Tsig = atof(argv[i + 1]);
+                sim1->TsigI = atof(argv[i + 1]);
             } else if (!strcmp(argv[i], "-WII")) {
                 sim1->GammaII = atof(argv[i + 1]);
             } else if (!strcmp(argv[i], "-tq")) {
@@ -253,6 +253,7 @@ int main(int argc, const char * argv[])
             }
             else if (t>=sim1->T2) { // last phase of the simulation until T3
                 sim1->TImean = sim1->TIMeanIN;
+                sim1->TEmean = sim1->TEMeanIN;
             }
         }
         else {
@@ -296,7 +297,8 @@ int main(int argc, const char * argv[])
          * RS cells: excitatory neurons
          * FS cells: inhibitory neurons
          *
-         * FS (p299): 20 v' = (v+55)(v+40) - u +I,
+         * FS (p299):
+         *      20 v' = (v+55)(v+40) - u +I,
          *      u' = 0.2(U(v) - u )
          *      if v >= 25, then v <- -45mV
          *
@@ -332,7 +334,7 @@ int main(int argc, const char * argv[])
             if(i<=sim1->NI) {
                 noise[i] = dist(e2);
                 Iback[i] = Iback[i] + dt/(sim1->tau_I*1.0) * (-Iback[i] + noise[i]);
-                Ieff[i] = Iback[i] / sqrt(1/(2*(sim1->tau_I/dt))) * sim1->Tsig + sim1->TImean;
+                Ieff[i] = Iback[i] / sqrt(1/(2*(sim1->tau_I/dt))) * sim1->TsigI + sim1->TImean;
                 Ichem[i] = Ichem[i] + dt/(sim1->tau_syn*1.) * (-Ichem[i]
                                                                + plast.WII * (NbSpikesI - ( v[i] > 25.0))
                                                               + plast.WEI * NbSpikesE);
@@ -349,7 +351,7 @@ int main(int argc, const char * argv[])
                     }
                 }
                 if (sim1->RESONANCE) {
-                    Ieff[i] = Iback[i] / sqrt(1/(2*(sim1->tau_I/dt))) * sim1->Tsig + sim1->TImean + cosVal;
+                    Ieff[i] = Iback[i] / sqrt(1/(2*(sim1->tau_I/dt))) * sim1->TsigI + sim1->TImean + cosVal;
                     I[i] = Ieff[i];
                 }
                 else {
@@ -486,7 +488,7 @@ int main(int argc, const char * argv[])
                 */
                 noise[i] = dist(e2);
                 Iback[i] = Iback[i] + dt/(sim1->tau_I*1.0) * (-Iback[i] + noise[i]);
-                Ieff[i] = Iback[i] / sqrt(1/(2*(sim1->tau_I/dt))) * sim1->C_Tsig + sim1->TEmean;
+                Ieff[i] = Iback[i] / sqrt(1/(2*(sim1->tau_I/dt))) * sim1->TsigE + sim1->TEmean;
                 Ichem[i] = Ichem[i] + dt/(sim1->C_tau_syn*1.) * (-Ichem[i]
                                                                   + plast.WEE * (NbSpikesE - ( v[i] > 35.0))
                                                                   + plast.WIE * NbSpikesI);

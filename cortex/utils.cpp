@@ -9,8 +9,8 @@
 #include "utils.h"
 
 void Simulation::initData() {
-    PLAST_RULE = "nonbursting";
-//    PLAST_RULE = "spiking";
+//    PLAST_RULE = "nonbursting";
+    PLAST_RULE = "spiking";
 //    PLAST_RULE = "passive";
     SPINDLE_LOWPASS = false;
     COMPUTE_PLAST = true;
@@ -22,7 +22,7 @@ void Simulation::initData() {
     SOFT = true;
     GLOB = true;
     RESONANCE = false;
-    DEBUG = true;
+    DEBUG = false;
 
     LTD = 0;
     LTP = 0;
@@ -50,7 +50,8 @@ void Simulation::initData() {
     ext = "";
     path = root + computer + directory;
 
-    Tsig = 60.0; // Variance of current in the inhibitory neurons
+    TsigI = 60.0; // Variance of current in the inhibitory neurons
+    TsigE = 72.0; // Variance of current in the inhibitory neurons
     tau_I = 5.0; // Time constant to filter the synaptic inputs
     tau_syn = 5.0;
     GammaII = 500.00; // I to I connectivity
@@ -68,10 +69,10 @@ void Simulation::initData() {
 
 
     gamma_c = 3;    // Initial gap junction strength
-    TImean = 50.0; // Mean imput current in inhibitory neurons.
-    TImean = 0.0; // Mean imput current in inhibitory neurons.
+//    TImean = 50.0; // Mean imput current in inhibitory neurons.
+    TImean = 30.0; // Mean imput current in inhibitory neurons.
     TEmean = 72.0; // Mean input current in inhibitory neurons.
-    TEmean = 72.0; // Mean input current in inhibitory neurons.
+    TEmean = 5.0; // Mean input current in inhibitory neurons.
     TIMeanIN = TImean;
     TEMeanIN = TEmean;
 //    cout << "Data initialized " << endl;
@@ -103,6 +104,8 @@ void Plasticity::initData() {
     A_gapD = 1.569e-5 * FACT;
     th_lowsp = 1.3;
     th_q = 1.3;
+//    th_lowsp = 2.0;
+//    th_q = 2.0; // threshold to differentiate between bursts and spikes
     A_gapP = A_gapD * 0.6;
     A_gapP = A_gapD * 0.05;
     A_gapP = A_gapD * 0.5;

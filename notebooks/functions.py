@@ -33,3 +33,7 @@ def readDataFile(path):
             except:
                 pass
     return x,y
+
+def xax(gamma, duration):
+    x= np.arange(0,(duration-1)/1000,(duration)/1000/len(gamma) )
+    return x
