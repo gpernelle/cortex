@@ -49,7 +49,7 @@ void Simulation::initData() {
     gethostname(hostname,1023);
 
     #ifdef __APPLE__
-        if(strncmp(hostname,"dyn1147-170.insecure.ic.ac.uk",1024) == 0) {
+        if(!strcmp(hostname,"dyn1147-170.insecure.ic.ac.uk")) {
             root = "/Users/";
             computer = "GP1514";
             directory = "/Dropbox/ICL-2014/Code/C-Code/cortex/data/";
@@ -65,7 +65,7 @@ void Simulation::initData() {
     #endif
 
     cout << hostname << endl;
-    cout << "0 if ICL workstation:" << strncmp(hostname,"dyn1147-170.insecure.ic.ac.uk",1024)<< endl;
+    cout << "0 if ICL workstation:" << strcmp(hostname,"dyn1147-170.insecure.ic.ac.uk")<< endl;
     ext = "";
     path = root + computer + directory;
     cout << path << endl;

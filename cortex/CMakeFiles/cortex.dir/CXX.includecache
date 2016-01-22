@@ -25,6 +25,8 @@ sstream
 -
 string
 -
+string.h
+-
 vector
 -
 math.h
