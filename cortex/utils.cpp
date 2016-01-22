@@ -51,7 +51,7 @@ void Simulation::initData() {
     path = root + computer + directory;
 
     TsigI = 60.0; // Variance of current in the inhibitory neurons
-    TsigE = 72.0; // Variance of current in the inhibitory neurons
+    TsigE = 72; // Variance of current in the inhibitory neurons
     tau_I = 5.0; // Time constant to filter the synaptic inputs
     tau_syn = 5.0;
     GammaII = 500.00; // I to I connectivity
@@ -72,7 +72,7 @@ void Simulation::initData() {
 //    TImean = 50.0; // Mean imput current in inhibitory neurons.
     TImean = 30.0; // Mean imput current in inhibitory neurons.
     TEmean = 72.0; // Mean input current in inhibitory neurons.
-    TEmean = 5.0; // Mean input current in inhibitory neurons.
+    TEmean = 20.0; // Mean input current in inhibitory neurons.
     TIMeanIN = TImean;
     TEMeanIN = TEmean;
 //    cout << "Data initialized " << endl;

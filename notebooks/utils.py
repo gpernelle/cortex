@@ -1,7 +1,7 @@
 __author__ = 'G. Pernelle'
 import matplotlib
 import numpy as np
-matplotlib.use('Agg')
+matplotlib.use('nbagg')
 from scipy.optimize import curve_fit
 
 import time as t

@@ -116,6 +116,7 @@ int main(int argc, const char * argv[])
     double* v = new double[N]{};
 
     double* u = new double[N]{0};
+    double* t_rest = new double[N]{0};
     double* Iback = new double[N]{0};
     double* Igap = new double[N]{0};
     double* Ichem = new double[N]{0};
@@ -490,15 +491,34 @@ int main(int argc, const char * argv[])
                 Iback[i] = Iback[i] + dt/(sim1->tau_I*1.0) * (-Iback[i] + noise[i]);
                 Ieff[i] = Iback[i] / sqrt(1/(2*(sim1->tau_I/dt))) * sim1->TsigE + sim1->TEmean;
                 Ichem[i] = Ichem[i] + dt/(sim1->C_tau_syn*1.) * (-Ichem[i]
-                                                                  + plast.WEE * (NbSpikesE - ( v[i] > 35.0))
+                                                                  + plast.WEE * (NbSpikesE - ( v[i] > 1.4))
                                                                   + plast.WIE * NbSpikesI);
 
+                if(0==1) {
+                    /*
+                     * RS cell
+                     * */
+                    I[i] = Ieff[i] + Ichem[i];
+                    v[i] = v[i] + dt * (1./100.) * (0.7 * (v[i]+60)*(v[i]+40) - u[i] + I[i]);
 
-                I[i] = Ieff[i] + Ichem[i];
-                v[i] = v[i] + dt * (1./100.) * (0.7 * (v[i]+60)*(v[i]+40) - u[i] + I[i]);
+                    u[i] = u[i] + dt * 0.03 * ( -2 * (v[i] + 60) - u[i] );
+                    vv[i] = v[i] > 35.0;
+                } else {
+                    /*
+                     * IAF model
+                     * */
+                    I[i] = Ieff[i] + Ichem[i];
+                    if (t>t_rest[i]) v[i] = v[i] + (-v[i] + I[i]*0.01) / 10 * dt;
+                    else v[i] = 0;
+                    if (v[i] >= 1) {
+                        v[i] += 0.5;
+                        t_rest[i] = t+4;
+                    }
+                    vv[i] = v[i] > 1.4;
+                }
 
-                u[i] = u[i] + dt * 0.03 * ( -2 * (v[i] + 60) - u[i] );
-                vv[i] = v[i] > 35.0;
+
+
 
                 /***************************************************
                  * SAVE SPIKES
