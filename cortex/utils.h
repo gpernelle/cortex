@@ -39,6 +39,7 @@ public:
     int after;
     double dt;
     int N;
+    double r;
     int NI;
     int NE;
     int stimulation;
@@ -49,7 +50,8 @@ public:
     std::string path;
     std::string model;
 
-    double Tsig;
+    double TsigI;
+    double TsigE;
     double tau_I;
     double tau_syn;
     double GammaII;
@@ -73,6 +75,7 @@ public:
     double TImean;
     double TEmean;
     double TIMeanIN;
+    double TEMeanIN;
 
     void initData();
     void initDuration();

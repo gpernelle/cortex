@@ -9,11 +9,11 @@
 #include "utils.h"
 
 void Simulation::initData() {
-    PLAST_RULE = "nonbursting";
-//    PLAST_RULE = "spiking";
+//    PLAST_RULE = "nonbursting";
+    PLAST_RULE = "spiking";
 //    PLAST_RULE = "passive";
     SPINDLE_LOWPASS = false;
-    COMPUTE_PLAST = true;
+    COMPUTE_PLAST = false;
     MIN_PLAST_THRESH = false;
     CORRELATION = false;
     FOURIER = true;
@@ -39,16 +39,18 @@ void Simulation::initData() {
     NI = (int) 4;
     NE = (int) 20;
     N = NE + NI;
+    r = 0;
     stimulation = 70;
 
 
-    root = "/Users/";
-    computer = "GP1514";
-    directory = "/Dropbox/ICL-2014/Code/C-Code/cortex/data/";
+    root = "/home/";
+    computer = "gp1514";
+    directory = "/Projects/github/cortex/data/";
     ext = "";
     path = root + computer + directory;
 
-    Tsig = 60.0; // Variance of current in the inhibitory neurons
+    TsigI = 60.0; // Variance of current in the inhibitory neurons
+    TsigE = 72.0; // Variance of current in the inhibitory neurons
     tau_I = 5.0; // Time constant to filter the synaptic inputs
     tau_syn = 5.0;
     GammaII = 500.00; // I to I connectivity
@@ -66,9 +68,10 @@ void Simulation::initData() {
 
 
     gamma_c = 3;    // Initial gap junction strength
-    TImean = 50.0; // Mean imput current in inhibitory neurons.
-    TEmean = 72.0; // Mean input current in inhibitory neurons.
+    TImean = 0.0; // Mean imput current in inhibitory neurons.
+    TEmean = 5.0; // Mean input current in inhibitory neurons.
     TIMeanIN = TImean;
+    TEMeanIN = TEmean;
 //    cout << "Data initialized " << endl;
 }
 
@@ -104,7 +107,7 @@ void Plasticity::initData() {
 
 
 //    VgapIN = sim.gamma_c / sim.NI;
-    VgapIN = 4.2 / sim.NI;
+    VgapIN = 5 / sim.NI;
     Vgap = sim.gamma_c / sim.NI;
 
     VgapLocal = new double *[sim.NI];

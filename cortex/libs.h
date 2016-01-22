@@ -16,6 +16,7 @@
 #include <fstream>
 #include <sstream>
 #include <string>
+#include <string.h>
 #include <vector>
 #include <math.h>
 #include <cmath>
