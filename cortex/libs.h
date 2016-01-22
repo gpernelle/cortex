@@ -30,6 +30,7 @@
 #include <time.h>
 #include <fftw3.h>
 #include "constants.h"
+#include <unistd.h>
 //#include <boost/nondet_random.hpp>
 //#include <boost/random.hpp>
 //#include <OpenCL/opencl.h>

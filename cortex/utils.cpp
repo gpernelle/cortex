@@ -43,10 +43,36 @@ void Simulation::initData() {
     r = 0; //when r = 0, simulation with only inhibitory neurons
     stimulation = 70;
 
+    // GET HOSTNAME TO ADJUT PATH in function of host
+    char hostname[1024];
+    hostname[1023] = '\0';
+    gethostname(hostname,1023);
 
-    root = "/Users/";
-    computer = "GP1514";
-    directory = "/Dropbox/ICL-2014/Code/C-Code/cortex/data/";
+    #ifdef __APPLE__
+        if(strncmp(hostname,"dyn1147-170.insecure.ic.ac.uk",1024) == 0) {
+            root = "/Users/";
+            computer = "GP1514";
+            directory = "/Dropbox/ICL-2014/Code/C-Code/cortex/data/";
+        } else {
+            root = "/Users/";
+            computer = "guillaume";
+            directory = "/Dropbox/ICL-2014/Code/C-Code/cortex/data/";
+        }
+    #elif __linux__
+        root = "/home/";
+        computer = "gp1514";
+        directory = "/Projects/github/cortex/data/";
+    #endif
+
+    cout << hostname << endl;
+    cout << "0 if ICL workstation:" << strncmp(hostname,"dyn1147-170.insecure.ic.ac.uk",1024)<< endl;
+    ext = "";
+    path = root + computer + directory;
+    cout << path << endl;
+
+//    root = "/Users/";
+//    computer = "GP1514";
+//    directory = "/Dropbox/ICL-2014/Code/C-Code/cortex/data/";
     ext = "";
     path = root + computer + directory;
 

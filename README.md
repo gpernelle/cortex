@@ -1,3 +1,8 @@
+## TO BUILD
+Set correct paths in utils.cpp (username)  and run "g++ main.cpp utils.cpp -o
+cortex -std=c++11 -lfftw3"
+
+then use cortex with the parameters defined in main.cpp
 
                                                                                                      
                                                                                                     
