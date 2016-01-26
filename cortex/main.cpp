@@ -247,6 +247,7 @@ int main(int argc, const char * argv[])
         if (!sim1->CONSOLE) {
             if(t<sim1->T1){ // first phase of the simulation
                 sim1->TImean = sim1->TIMeanIN;
+                sim1->TEmean = sim1->TEMeanIN;
             }
             else if (t>sim1->T1 and t<sim1->T2) { // second phase of the simulation
                 sim1->TImean =   sim1->TIMeanIN + sim1->stimulation;
@@ -609,6 +610,7 @@ int main(int argc, const char * argv[])
         pl(sim1->DEBUG and t<3, __LINE__);
         if (!sim1->CONSOLE) {
             ssp.push_back(NbSpikesI+NbSpikesE);
+            ssp1.push_back(NbSpikesE);
 //            if (t < sim1->T1 + sim1->after and t > sim1->T1 - sim1->before){
 //                current1.push_back( getAvg(I, N) );
 //                ssp1.push_back(NbSpikes);ma
@@ -670,7 +672,7 @@ int main(int argc, const char * argv[])
 //        util.writedata("current2", current2);
 //        util.writedata("current3", current3);
         
-//        util.writedata("ssp1", ssp1);
+        util.writedata("sspE", ssp1);
 //        util.writedata("ssp2", ssp2);
 //        util.writedata("ssp3", ssp3);
         

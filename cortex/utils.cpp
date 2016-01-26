@@ -49,7 +49,7 @@ void Simulation::initData() {
     gethostname(hostname,1023);
 
     #ifdef __APPLE__
-        if(!strcmp(hostname,"dyn1147-170.insecure.ic.ac.uk")) {
+        if(!strcmp(hostname,"dyn1147-170.insecure.ic.ac.uk") or !strcmp(hostname,"ip-static-94-242-199-231.server.lu")) {
             root = "/Users/";
             computer = "GP1514";
             directory = "/Dropbox/ICL-2014/Code/C-Code/cortex/data/";
@@ -81,7 +81,7 @@ void Simulation::initData() {
     tau_I = 5.0; // Time constant to filter the synaptic inputs
     tau_syn = 5.0;
     GammaII = 500.00; // I to I connectivity
-    GammaIE = -500.00; // I to E connectivity
+    GammaIE = -1000.00; // I to E connectivity
     GammaEE = 500.00; // E to E connectivity
     GammaEI = 500.00; // E to I connectivity
 
@@ -97,7 +97,6 @@ void Simulation::initData() {
     gamma_c = 3;    // Initial gap junction strength
 //    TImean = 50.0; // Mean imput current in inhibitory neurons.
     TImean = 30.0; // Mean imput current in inhibitory neurons.
-    TEmean = 72.0; // Mean input current in inhibitory neurons.
     TEmean = 20.0; // Mean input current in inhibitory neurons.
     TIMeanIN = TImean;
     TEMeanIN = TEmean;
