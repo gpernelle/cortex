@@ -83,7 +83,7 @@ void Simulation::initData() {
     GammaII = 500.00; // I to I connectivity
     GammaIE = -1000.00; // I to E connectivity
     GammaEE = 500.00; // E to E connectivity
-    GammaEI = 500.00; // E to I connectivity
+    GammaEI = 1000.00; // E to I connectivity
 
     TC_Tsig = 70.0;
     TC_tau_I = 5.0;
@@ -96,7 +96,7 @@ void Simulation::initData() {
 
     gamma_c = 3;    // Initial gap junction strength
 //    TImean = 50.0; // Mean imput current in inhibitory neurons.
-    TImean = 30.0; // Mean imput current in inhibitory neurons.
+    TImean = 0.0; // Mean imput current in inhibitory neurons.
     TEmean = 20.0; // Mean input current in inhibitory neurons.
     TIMeanIN = TImean;
     TEMeanIN = TEmean;
