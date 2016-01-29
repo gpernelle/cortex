@@ -20,12 +20,14 @@ cx4 = cubehelix.cmap(reverse=False, start=0., rot=0.5)
 from joblib import Parallel, delayed  
 num_cores = multiprocessing.cpu_count()
 
-matplotlib.rc('xtick', labelsize=16)
-matplotlib.rc('ytick', labelsize=16)
-matplotlib.rc('axes', labelsize = 20)
-matplotlib.rc('axes', titlesize = 20)
-
 plt.style.use('ggplot')
+
+matplotlib.rc('xtick', labelsize=12)
+matplotlib.rc('ytick', labelsize=12)
+matplotlib.rc('axes', labelsize = 12)
+matplotlib.rc('axes', titlesize = 12)
+matplotlib.rc('lines', linewidth=2)
+matplotlib.rc('axes', facecolor = "white")
 
 today = datetime.date.today()
 todayStr = '%04d%02d%02d' % (today.year, today.month, today.day)

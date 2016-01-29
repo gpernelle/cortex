@@ -96,7 +96,7 @@ void Simulation::initData() {
 
     gamma_c = 3;    // Initial gap junction strength
 //    TImean = 50.0; // Mean imput current in inhibitory neurons.
-    TImean = 0.0; // Mean imput current in inhibitory neurons.
+    TImean = 30.0; // Mean imput current in inhibitory neurons.
     TEmean = 20.0; // Mean input current in inhibitory neurons.
     TIMeanIN = TImean;
     TEMeanIN = TEmean;
