@@ -22,10 +22,12 @@ num_cores = multiprocessing.cpu_count()
 
 plt.style.use('ggplot')
 
-matplotlib.rc('xtick', labelsize=12)
-matplotlib.rc('ytick', labelsize=12)
-matplotlib.rc('axes', labelsize = 12)
-matplotlib.rc('axes', titlesize = 12)
+fontsize =14
+
+matplotlib.rc('xtick', labelsize=fontsize)
+matplotlib.rc('ytick', labelsize=fontsize)
+matplotlib.rc('axes', labelsize = fontsize)
+matplotlib.rc('axes', titlesize = fontsize)
 matplotlib.rc('lines', linewidth=2)
 matplotlib.rc('axes', facecolor = "white")
 
