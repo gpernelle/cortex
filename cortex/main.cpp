@@ -556,7 +556,7 @@ int main(int argc, const char * argv[])
         meanSpike += NbSpikesI/(sim1->NI*1.0);  // only for inhibitory neurons here
 
         if (sim1->FOURIER){
-            vm.push_back(getAvg<double>(v, sim1->NI));
+            vm.push_back(getAvg<double>(v, sim1->NI+1, sim1->N));
         }
         pm.push_back(getAvg<double>(p, sim1->NI));
         qm.push_back(getAvg<double>(q, sim1->NI));

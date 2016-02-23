@@ -76,22 +76,22 @@ void Simulation::initData() {
     ext = "";
     path = root + computer + directory;
 
-    TsigI = 60.0; // Variance of current in the inhibitory neurons
+    TsigI = 70.0; // Variance of current in the inhibitory neurons
     TsigE = 72; // Variance of current in the inhibitory neurons
-    tau_I = 5.0; // Time constant to filter the synaptic inputs
-    tau_syn = 5.0;
+    tau_I = 2.0; // Time constant to filter the synaptic inputs
+    tau_syn = 5;
     GammaII = 500.00; // I to I connectivity
     GammaIE = -1000.00; // I to E connectivity
     GammaEE = 500.00; // E to E connectivity
     GammaEI = 1000.00; // E to I connectivity
 
-    TC_Tsig = 70.0;
-    TC_tau_I = 5.0;
-    TC_tau_syn = 5.0;
+//    TC_Tsig = 70.0;
+//    TC_tau_I = .0;
+//    TC_tau_syn = 5.0;
 
     C_Tsig = 75.0;
-    C_tau_I = 10.0;
-    C_tau_syn = 5.0;
+    C_tau_I = 1.0;
+    C_tau_syn = 3.0;
 
 
     gamma_c = 3;    // Initial gap junction strength
