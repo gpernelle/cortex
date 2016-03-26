@@ -20,7 +20,7 @@ void Simulation::initData() {
     SPIKES = true;
     CONSOLE = false;
     SOFT = true;
-    GLOB = true;
+    GLOB = false;
     RESONANCE = false;
     DEBUG = false;
 
@@ -28,7 +28,7 @@ void Simulation::initData() {
     LTP = 0;
 
     dt = 0.25;
-    T = 10000 / dt;
+    T = 1000 / dt;
     before = T;
     after = T;
     d1 = T;

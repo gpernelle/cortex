@@ -333,7 +333,7 @@ int main(int argc, const char * argv[])
              * 0 < i < NI : FS inhibitbory cells
              * NI < i < NE+NI : RS excitatory cells
              */
-            if(i<=sim1->NI) {
+            if(i<sim1->NI) {
                 noise[i] = dist(e2);
                 Iback[i] = Iback[i] + dt/(sim1->tau_I*1.0) * (-Iback[i] + noise[i]);
                 Ieff[i] = Iback[i] / sqrt(1/(2*(sim1->tau_I/dt))) * sim1->TsigI + sim1->TImean;
@@ -349,7 +349,7 @@ int main(int argc, const char * argv[])
                     Igap[i] = 0;
 
                     for (int k = 0; k<sim1->NI; k++) {
-                        Igap[i] += (plast.VgapLocal[i][k]) * (v[k] - v[i]);
+                        Igap[i] += plast.VgapLocal[i][k] * (v[k] - v[i]);
                     }
                 }
                 if (sim1->RESONANCE) {
@@ -563,7 +563,8 @@ int main(int argc, const char * argv[])
         lm.push_back(getAvg<double>(LowSp, sim1->NI));
 
         /***************************************************
-         * PLASTICITY
+         * PLAST
+         * ICITY
          ***************************************************/
         pl(sim1->DEBUG and t<3, __LINE__);
         if (!sim1->CONSOLE and sim1->COMPUTE_PLAST) {
@@ -582,7 +583,9 @@ int main(int argc, const char * argv[])
             else {
                 // compute local plasticity
                 //
-                plast.plasticityLocal(p, nonbursting, t);
+                if (sim1->PLAST_RULE == "nonbursting") plast.plasticityLocal(p, nonbursting, t);
+                else if (sim1->PLAST_RULE == "spiking") plast.plasticityLocal(p, vv, t);
+                else if (sim1->PLAST_RULE == "passive") plast.plasticityLocal(p, passive, t);
                 double instantMeanG = 0;
                 for (int i = 0; i < sim1->NI; i++) {
                     for (int j = 0; j < i; j++) {
