@@ -56,7 +56,7 @@ void Simulation::initData() {
         } else {
             root = "/Users/";
             computer = "guillaume";
-            directory = "/Dropbox/ICL-2014/Code/C-Code/cortex/data/";
+            directory = "/Projects/github/cortex/data/";
         }
     #elif __linux__
         root = "/home/";
