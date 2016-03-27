@@ -8,13 +8,15 @@ import time as t
 
 import pandas as pd
 import pylab as plt
-import re, csv, os, datetime, os, sys, cubehelix, multiprocessing, sh, subprocess, math
+import ipyparallel as ipp
+import re, csv, os, datetime, os, sys, cubehelix, multiprocessing, sh, subprocess, math, socket
 import blaze
 from matplotlib import gridspec
 from matplotlib.pyplot import cm 
 from bokeh.plotting import figure, show, output_file
 from matplotlib.mlab import psd
 from scipy.misc import comb
+
 
 cx4 = cubehelix.cmap(reverse=False, start=0., rot=0.5)
 from joblib import Parallel, delayed  
