@@ -22,6 +22,8 @@ public:
     string PLAST_RULE;
     bool SPINDLE_LOWPASS;
     bool COMPUTE_PLAST;
+    bool CLUSTER;
+    bool localWII;
     bool MIN_PLAST_THRESH;
     bool GLOB;
     bool CORRELATION;
@@ -112,6 +114,35 @@ public:
     }
 
 
+    int writemap(string name, double ** (map))
+    {
+
+        int glob = sim.GLOB * 1;
+        stringstream sstm;
+        sstm << name << "_g-" << sim.gamma_c << "_TImean-" << (sim.TImean) << "_T-" << (sim.T * sim.dt) << "_Glob-" <<
+        glob;
+        sstm << "_dt-" << sim.dt << "_N-" << sim.N << "_r-" << sim.r << "_S-" << sim.stimulation << "_WII-" << sim.GammaII;
+        if (sim.LTD) sstm << "_LTD-" << sim.LTD;
+        if (sim.LTP) sstm << "_LTP-" << sim.LTP;
+        sstm << "_model-"<< sim.model;
+
+        //    //test if path exists
+        //    fileExists(sim.path.c_str());
+        const string path_x = sim.path + sstm.str() + sim.ext;
+        std::fstream os(path_x, ios::out | ios::binary);
+
+        for (int i = 0; i < sim.NI; ++i)
+        {
+            for (int j = 0; j < sim.NI; ++j)
+            {
+                os << map[i][j]<<" ";
+            }
+            os<<"\n";
+        }
+        return 0;
+    }
+
+
 };
 
 class MovingAverage {
@@ -149,6 +180,7 @@ public:
     double VgapIN;
 
     double** VgapLocal;
+    double** WIILocal;
 
     // Synaptic weights
     //

@@ -11,16 +11,18 @@
 void Simulation::initData() {
 //    PLAST_RULE = "nonbursting";
     PLAST_RULE = "spiking";
+    CLUSTER = true;
+    localWII = true;
 //    PLAST_RULE = "passive";
     SPINDLE_LOWPASS = false;
-    COMPUTE_PLAST = true;
+    COMPUTE_PLAST = false;
     MIN_PLAST_THRESH = false;
-    CORRELATION = true;
-    FOURIER = true;
+    CORRELATION = false;
+    FOURIER = false;
     SPIKES = true;
     CONSOLE = false;
     SOFT = true;
-    GLOB = false;
+    GLOB = true;
     RESONANCE = false;
     DEBUG = false;
 
@@ -49,7 +51,7 @@ void Simulation::initData() {
     gethostname(hostname,1023);
 
     #ifdef __APPLE__
-        if(!strcmp(hostname,"dyn1147-170.insecure.ic.ac.uk") or !strcmp(hostname,"ip-static-94-242-199-231.server.lu")) {
+        if(!strcmp(hostname,"dyn1147-170.insecure.ic.ac.uk") or !strcmp(hostname,"ip-static-94-242-199-231.server.lu") or (1==1) ){
             root = "/Users/";
             computer = "GP1514";
             directory = "/Dropbox/ICL-2014/Code/C-Code/cortex/data/";
@@ -141,6 +143,7 @@ void Plasticity::initData() {
     Vgap = sim.gamma_c / sim.NI;
 
     VgapLocal = new double *[sim.NI];
+    WIILocal = new double *[sim.NI];
 
     // Synaptic weights
     //

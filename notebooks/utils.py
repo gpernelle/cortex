@@ -10,10 +10,9 @@ import pandas as pd
 import pylab as plt
 import ipyparallel as ipp
 import re, csv, os, datetime, os, sys, cubehelix, multiprocessing, sh, subprocess, math, socket
-import blaze
 from matplotlib import gridspec
 from matplotlib.pyplot import cm 
-from bokeh.plotting import figure, show, output_file
+from bokeh.plotting import figure, show, output_file, save
 from matplotlib.mlab import psd
 from scipy.misc import comb
 

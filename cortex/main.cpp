@@ -98,11 +98,17 @@ int main(int argc, const char * argv[])
                 sim1->RESONANCE = true;
             } else if (!strcmp(argv[i], "-model")) {
                 sim1->model = string(argv[i + 1]);
+            } else if (!strcmp(argv[i], "-directory")) {
+                sim1->directory = string(argv[i + 1]);
+            } else if (!strcmp(argv[i], "-global")) {
+                sim1->GLOB = (atoi(argv[i + 1])==1);
             }
+
         }
     }
     sim1->NE = int(sim1->r*sim1->N);
     sim1->NI = sim1->N - sim1->NE;
+    int nbInClusters = sim1->NI/2;
     sim1->initDuration();
     vector<double> g {};
     MovingAverage mvgamma(g);
@@ -125,6 +131,7 @@ int main(int argc, const char * argv[])
     double* I = new double[N]{0};
     double* p = new double[N]{0};
     double* q = new double[N]{0};
+    double synSpikes = 0;
     bool* nonbursting = new bool[N]{false};
     bool* passive = new bool[N]{true};
     double meanG = 0;
@@ -224,13 +231,61 @@ int main(int argc, const char * argv[])
     if (!sim1->GLOB) {
         for (int i = 0; i < sim1->NI; ++i) {
             plast.VgapLocal[i] = new double[sim1->NI];
+            plast.WIILocal[i] = new double[sim1->NI];
         }
         for (int m = 0; m<sim1->NI; m++) {
+                v[m] = -50+(-50*(m<nbInClusters));
+                vv[m] = m<nbInClusters;
+//                Ichem[m] = (1+dist(e2))*(2-int(m/50));
             for (int n=0; n<sim1->NI; n++) {
-                plast.VgapLocal[m][n] = plast.Vgap*1.0;
+//                plast.VgapLocal[m][n] = plast.Vgap*1.0*(m!=n);
+                plast.VgapLocal[m][n] = max(0.001,dist(e2)*(m!=n))*plast.Vgap;
+                plast.WIILocal[m][n] = plast.WII*(m!=n);
+                plast.WEE = 0;
+                plast.WIE = 0;
+                plast.WEI = 0;
+
             }
         }
-    }
+
+
+
+        //----------------
+        // CLUSTERING
+        if (sim1->CLUSTER){
+//            for (int m = 0; m<sim1->NI; m++) {
+//                for (int n=0; n<sim1->NI; n++) {
+//                    if ((n<=sim1->NI/2 and m>=sim1->NI/2)
+//                        or (n>=sim1->NI/2 and m<=sim1->NI/2)) {
+//                        plast.VgapLocal[m][n] *= 0.1;
+//                    }
+//                }
+//            }
+
+            // distance connection
+//            for (int m = 0; m<sim1->NI; m++) {
+//                for (int n=0; n<sim1->NI; n++) {
+//                    plast.VgapLocal[m][n] *= 1/pow(abs((n-m))+1,1);
+//                    plast.WIILocal[m][n] *= 1/pow(abs((n-m))+1,1);
+//                    }
+//                }
+//            }
+            int nbToSync = 1;
+            for (int m = 0; m<sim1->NI; m++) {
+                for (int n=0; n<sim1->NI; n++) {
+//                    plast.VgapLocal[m][n] *=  (int(m/nbInClusters)==int((n)/nbInClusters));
+//                    plast.WIILocal[m][n] *=  (int(m/nbInClusters)==int((n)/nbInClusters));
+                    plast.WIILocal[m][n] *= bool(int((m+nbToSync)/nbInClusters)==int((n+nbToSync)/nbInClusters)) or bool(int((m)/nbInClusters)==int((n)/nbInClusters)) ;
+                    plast.VgapLocal[m][n] *= bool(int((m+nbToSync)/nbInClusters)==int((n+nbToSync)/nbInClusters)) or bool(int((m)/nbInClusters)==int((n)/nbInClusters)) ;
+                    }
+                }
+            }
+
+        }
+        util.writemap("GAP0", plast.VgapLocal);
+
+        //------------------
+
 
     // start counter time
     //
@@ -336,21 +391,47 @@ int main(int argc, const char * argv[])
             if(i<sim1->NI) {
                 noise[i] = dist(e2);
                 Iback[i] = Iback[i] + dt/(sim1->tau_I*1.0) * (-Iback[i] + noise[i]);
-                Ieff[i] = Iback[i] / sqrt(1/(2*(sim1->tau_I/dt))) * sim1->TsigI + sim1->TImean;
-                Ichem[i] = Ichem[i] + dt/(sim1->tau_syn*1.) * (-Ichem[i]
-                                                               + plast.WII * (NbSpikesI - ( v[i] > 25.0))
-                                                              + plast.WEI * NbSpikesE);
+//                Ieff[i] = Iback[i] / sqrt(1/(2*(sim1->tau_I/dt))) * sim1->TsigI + sim1->TImean;
+                Ieff[i] = Iback[i] / sqrt(1/(2*(sim1->tau_I/dt))) * sim1->TsigI + sim1->TImean*((i>nbInClusters)*(t>300) + (i<=nbInClusters) );
+
 
                 // sum
                 if (sim1->GLOB) {
                     Igap[i]= plast.Vgap*(Vsum -  sim1->NI * v[i]);
+                    Ichem[i] = Ichem[i] + dt/(sim1->tau_syn*1.) * (-Ichem[i]
+                                                                   + plast.WII * (NbSpikesI - ( v[i] > 25.0))
+                                                                   + plast.WEI * NbSpikesE);
                 }
                 else {
                     Igap[i] = 0;
-
+                    synSpikes = 0;
                     for (int k = 0; k<sim1->NI; k++) {
                         Igap[i] += plast.VgapLocal[i][k] * (v[k] - v[i]);
+
+                        if (sim1->CLUSTER and sim1->localWII) {
+//                            synSpikes += plast.WIILocal[i][k] * ((vv[k] )) ;//* (int(i/nbInClusters)==int(k/nbInClusters));
+//                            synSpikes += plast.WII * ((vv[k])) * (i!=k) * (int(i/nbInClusters)==int(k/nbInClusters)) ;
+                            synSpikes += plast.WIILocal[i][k] * ((vv[k])) * (i!=k) * (int(i/nbInClusters)==int(k/nbInClusters)) ;
+                        }
+
                     }
+                    if (sim1->CLUSTER and sim1->localWII) {
+                        Ichem[i] += dt/(sim1->tau_syn*1.) * (-Ichem[i]
+                                                             + synSpikes
+//                                                             + plast.WII * (NbSpikesI)// - ( v[i] > 25.0))
+                                                             + plast.WEI * NbSpikesE);
+
+                    } else {
+                        Ichem[i] += + dt/(sim1->tau_syn*1.) * (-Ichem[i]
+                                                                       + plast.WII * (NbSpikesI - ( v[i] > 25.0))
+                                                                       + plast.WEI * NbSpikesE);
+                    }
+                    if (synSpikes!=0 or (plast.WII * (NbSpikesI - ( v[i] > 25.0)))!=0) {
+                        cout << "1:" << synSpikes << endl;
+                        cout << "2:" << plast.WII * (NbSpikesI - (v[i] > 25.0)) << endl;
+                    }
+
+
                 }
                 if (sim1->RESONANCE) {
                     Ieff[i] = Iback[i] / sqrt(1/(2*(sim1->tau_I/dt))) * sim1->TsigI + sim1->TImean + cosVal;
@@ -563,8 +644,8 @@ int main(int argc, const char * argv[])
         lm.push_back(getAvg<double>(LowSp, sim1->NI));
 
         /***************************************************
-         * PLAST
-         * ICITY
+         * PLASTICITY
+         *
          ***************************************************/
         pl(sim1->DEBUG and t<3, __LINE__);
         if (!sim1->CONSOLE and sim1->COMPUTE_PLAST) {
@@ -663,10 +744,11 @@ int main(int argc, const char * argv[])
         util.writedata("vm", vm);
         util.writedata("ssp", ssp);
 
+
 //        util.writedata("resonance", abs(res_val));
         cout << "resonance: " <<  abs(res_val) << "\t" << abs(res_val)/T/N/dt << endl;
         if (sim1->FOURIER) {
-//            util.writedata("vm", vm);
+            util.writedata("vm", vm);
 //            util.writedata("freq", FFT.freq);
 //            util.writedata("amp", FFT.amp);
         }
@@ -689,6 +771,8 @@ int main(int argc, const char * argv[])
             cout << "gamma_c : " << plast.Vgap*sim1->NI <<"\tRON_I:\t" << meanRON_I << endl;
         }
         else {
+            util.writemap("GAP", plast.VgapLocal);
+            util.writemap("WII", plast.WIILocal);
             cout << "gamma_c avg : " << meanG/counter << endl;
         }
     }
