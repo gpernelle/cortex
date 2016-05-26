@@ -1,4 +1,4 @@
-from IO import *
+from utils import *
 
 def movingaverage(values,window):
     weigths = np.repeat(1.0, window)/window
@@ -34,6 +34,37 @@ def readDataFile(path):
                 pass
     return x,y
 
-def xax(gamma, duration):
-    x= np.arange(0,(duration-1)/1000,(duration)/1000/len(gamma) )
-    return x
+
+
+@autojit
+def resonanceFS(F, tauv=15):
+    T = 2000
+    dt = 1
+    t = np.arange(0, T, dt)
+    F = np.logspace(0.5, 2.3, 200)
+
+    res_var = np.empty(len(F), dtype=np.float64)
+    b = 2
+    for k, f in enumerate(F):
+        A = 0.01
+        I = A * np.cos(2 * np.pi * f * t / 1000)
+        res_v = []
+        res_u = []
+        u = 0
+        t_rest = 0
+
+        # izh neuron model for cortical fast spiking neurons (that burst)
+        v = -60
+        for i in range(len(t)):
+            v += dt / tauv * ((v + 60) * (v + 50) - 20 * u + 8 * I[i])
+            u += dt * 0.044 * ((v + 55) - u)
+            if v > 25:
+                v = -40
+                u += 50
+            if i * dt > 1500:
+                res_v.append(v / A)
+
+        var = np.var(res_v)
+        #         var = np.max(res_v)-np.min(res_v)
+        res_var[k] = var
+    return res_var

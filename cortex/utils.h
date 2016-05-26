@@ -46,6 +46,8 @@ public:
     int NI;
     int NE;
     int stimulation;
+    int sharedWII;
+    int sharedG;
     std::string root;
     std::string computer;
     std::string directory;
@@ -73,12 +75,18 @@ public:
     double C_Tsig;
     double C_tau_I;
     double C_tau_syn;
+    int tauv;
 
     double gamma_c;
     double TImean;
     double TEmean;
     double TIMeanIN;
     double TEMeanIN;
+
+    int nbInClusters;
+
+    int nbOfGapJunctions;
+
 
     void initData();
     void initDuration();
@@ -102,6 +110,7 @@ public:
         if (sim.LTD) sstm << "_LTD-" << sim.LTD;
         if (sim.LTP) sstm << "_LTP-" << sim.LTP;
         sstm << "_model-"<< sim.model;
+        sstm << "_sG-"<< sim.sharedG << "_sWII-" << sim.sharedWII << "_tauv-" << sim.tauv ;
 
         //    //test if path exists
         //    fileExists(sim.path.c_str());
@@ -125,6 +134,8 @@ public:
         if (sim.LTD) sstm << "_LTD-" << sim.LTD;
         if (sim.LTP) sstm << "_LTP-" << sim.LTP;
         sstm << "_model-"<< sim.model;
+        sstm << "_sG-"<< sim.sharedG << "_sWII-" << sim.sharedWII << "_tauv-" << sim.tauv ;
+
 
         //    //test if path exists
         //    fileExists(sim.path.c_str());
@@ -180,6 +191,7 @@ public:
     double VgapIN;
 
     double** VgapLocal;
+    double** allowedConnections;
     double** WIILocal;
 
     // Synaptic weights

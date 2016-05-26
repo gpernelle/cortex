@@ -15,14 +15,14 @@ void Simulation::initData() {
     localWII = true;
 //    PLAST_RULE = "passive";
     SPINDLE_LOWPASS = false;
-    COMPUTE_PLAST = false;
+    COMPUTE_PLAST = true;
     MIN_PLAST_THRESH = false;
     CORRELATION = false;
-    FOURIER = false;
+    FOURIER = true;
     SPIKES = true;
     CONSOLE = false;
     SOFT = true;
-    GLOB = true;
+    GLOB = false;
     RESONANCE = false;
     DEBUG = false;
 
@@ -44,6 +44,8 @@ void Simulation::initData() {
     N = NE + NI;
     r = 0; //when r = 0, simulation with only inhibitory neurons
     stimulation = 70;
+    sharedWII = 0;
+    sharedG = 0;
 
     // GET HOSTNAME TO ADJUT PATH in function of host
     char hostname[1024];
@@ -81,7 +83,9 @@ void Simulation::initData() {
     TsigI = 70.0; // Variance of current in the inhibitory neurons
     TsigE = 72; // Variance of current in the inhibitory neurons
     tau_I = 2.0; // Time constant to filter the synaptic inputs
-    tau_syn = 5;
+    tau_syn = 5.0;
+    tauv = 15; // Time constant of the voltage for the Izhikevich's model
+
     GammaII = 500.00; // I to I connectivity
     GammaIE = -1000.00; // I to E connectivity
     GammaEE = 500.00; // E to E connectivity
@@ -102,7 +106,10 @@ void Simulation::initData() {
     TEmean = 20.0; // Mean input current in inhibitory neurons.
     TIMeanIN = TImean;
     TEMeanIN = TEmean;
+
 //    cout << "Data initialized " << endl;
+
+
 }
 
 void Simulation::initDuration() {
@@ -137,12 +144,36 @@ void Plasticity::initData() {
     A_gapP = A_gapD * 0.05;
     A_gapP = A_gapD * 0.5;
 
-
+    allowedConnections = new double *[sim.NI];
 //    VgapIN = sim.gamma_c / sim.NI;
-    VgapIN = 5.0 / sim.NI;
-    Vgap = sim.gamma_c / sim.NI;
+    for (int i = 0; i < sim.NI; ++i) {
+        allowedConnections[i] = new double[sim.NI];
+    }
+    for (int m = 0; m < sim.NI; ++m) {
+        for (int n = 0; n < sim.NI; ++n) {
+//            allowedConnections[m][n] = bool(int((m+sim.sharedG)/sim.nbInClusters)==int((n+sim.sharedG)/sim.nbInClusters))
+//                                       or bool(int((m)/sim.nbInClusters)==int((n)/sim.nbInClusters)) or (sim.sharedG==-1);
+            allowedConnections[m][n] = (bool(m<(sim.nbInClusters+sim.sharedG) and n<(sim.nbInClusters+sim.sharedG))
+                    or bool((m>=(sim.nbInClusters-sim.sharedG) )and (n>=(sim.nbInClusters-sim.sharedG)))) and (m!=n);
+        }
+    }
+
+    sim.nbOfGapJunctions = 0;
+    for (int m = 0; m < sim.NI; ++m) {
+        for (int n = 0; n < sim.NI; ++n) {
+            sim.nbOfGapJunctions += int(allowedConnections[m][n]);
+        }
+    }
+
+
+
+
+
+    VgapIN = 7.0 / sqrt(sim.nbOfGapJunctions);
+    Vgap = sim.gamma_c / sqrt(sim.nbOfGapJunctions);
 
     VgapLocal = new double *[sim.NI];
+
     WIILocal = new double *[sim.NI];
 
     // Synaptic weights
@@ -194,8 +225,8 @@ void Plasticity::plasticityLocal(double *burstTh, bool *topotentiate, int t) {
             for (int j = 0; j < i; j++) {
                 dG = (i != j) * (VgapIN * sim.dt * (-A_gapD * burstTh[i] +
                                                     A_gapP * (VgapIN - VgapLocal[i][j]) / VgapIN * (topotentiate[i])));
-                VgapLocal[i][j] = max(0.0, VgapLocal[i][j] + 2 * dG);
-                VgapLocal[j][i] = max(0.0, VgapLocal[j][i] + 2 * dG);
+                VgapLocal[i][j] = max(0.0, VgapLocal[i][j] + 2 * dG) * allowedConnections[i][j];
+                VgapLocal[j][i] = VgapLocal[i][j];
                 instantMeanG += VgapLocal[i][j];
             }
         }

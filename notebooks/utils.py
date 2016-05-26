@@ -2,7 +2,9 @@ __author__ = 'G. Pernelle'
 import matplotlib
 import numpy as np
 matplotlib.use('nbagg')
+# matplotlib.use('Agg')
 from scipy.optimize import curve_fit
+from numba import autojit
 
 import time as t
 
@@ -15,6 +17,7 @@ from matplotlib.pyplot import cm
 from bokeh.plotting import figure, show, output_file, save
 from matplotlib.mlab import psd
 from scipy.misc import comb
+from scipy import sparse, signal
 
 
 cx4 = cubehelix.cmap(reverse=False, start=0., rot=0.5)

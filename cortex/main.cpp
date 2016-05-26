@@ -74,8 +74,14 @@ int main(int argc, const char * argv[])
                 sim1->after = atoi(argv[i + 1]);
             } else if (!strcmp(argv[i], "-S")) {
                 sim1->stimulation = atoi(argv[i + 1]);
+            } else if (!strcmp(argv[i], "-sG")) {
+                sim1->sharedG = atoi(argv[i + 1]);
+            } else if (!strcmp(argv[i], "-sWII")) {
+                sim1->sharedWII = atoi(argv[i + 1]);
             } else if (!strcmp(argv[i], "-s")) {
                 sim1->TsigI = atof(argv[i + 1]);
+            } else if (!strcmp(argv[i], "-tauv")) {
+                sim1->tauv = atof(argv[i + 1]);
             } else if (!strcmp(argv[i], "-WII")) {
                 sim1->GammaII = atof(argv[i + 1]);
             } else if (!strcmp(argv[i], "-tq")) {
@@ -108,7 +114,8 @@ int main(int argc, const char * argv[])
     }
     sim1->NE = int(sim1->r*sim1->N);
     sim1->NI = sim1->N - sim1->NE;
-    int nbInClusters = sim1->NI/2;
+    sim1->nbInClusters = sim1->NI/2;
+
     sim1->initDuration();
     vector<double> g {};
     MovingAverage mvgamma(g);
@@ -227,26 +234,30 @@ int main(int argc, const char * argv[])
     std::fill(v,v+N,-60); // init v to -60mV
 
     // Init connection matrix
-    //
+    //`
     if (!sim1->GLOB) {
         for (int i = 0; i < sim1->NI; ++i) {
             plast.VgapLocal[i] = new double[sim1->NI];
             plast.WIILocal[i] = new double[sim1->NI];
+
         }
         for (int m = 0; m<sim1->NI; m++) {
-                v[m] = -50+(-50*(m<nbInClusters));
-                vv[m] = m<nbInClusters;
+                v[m] = -50+(-50*(m<sim1->nbInClusters));
+                vv[m] = m<sim1->nbInClusters;
 //                Ichem[m] = (1+dist(e2))*(2-int(m/50));
-            for (int n=0; n<sim1->NI; n++) {
+            for (int n=0; n<m; n++) {
 //                plast.VgapLocal[m][n] = plast.Vgap*1.0*(m!=n);
                 plast.VgapLocal[m][n] = max(0.001,dist(e2)*(m!=n))*plast.Vgap;
+                plast.VgapLocal[n][m] = plast.VgapLocal[m][n];
                 plast.WIILocal[m][n] = plast.WII*(m!=n);
-                plast.WEE = 0;
-                plast.WIE = 0;
-                plast.WEI = 0;
+                plast.WIILocal[n][m] = plast.WII*(m!=n);
+
 
             }
         }
+        plast.WEE = 0;
+        plast.WIE = 0;
+        plast.WEI = 0;
 
 
 
@@ -270,19 +281,19 @@ int main(int argc, const char * argv[])
 //                    }
 //                }
 //            }
-            int nbToSync = 1;
             for (int m = 0; m<sim1->NI; m++) {
                 for (int n=0; n<sim1->NI; n++) {
-//                    plast.VgapLocal[m][n] *=  (int(m/nbInClusters)==int((n)/nbInClusters));
-//                    plast.WIILocal[m][n] *=  (int(m/nbInClusters)==int((n)/nbInClusters));
-                    plast.WIILocal[m][n] *= bool(int((m+nbToSync)/nbInClusters)==int((n+nbToSync)/nbInClusters)) or bool(int((m)/nbInClusters)==int((n)/nbInClusters)) ;
-                    plast.VgapLocal[m][n] *= bool(int((m+nbToSync)/nbInClusters)==int((n+nbToSync)/nbInClusters)) or bool(int((m)/nbInClusters)==int((n)/nbInClusters)) ;
+//                    plast.VgapLocal[m][n] *=  (int(m/sim1->sim1->nbInClusters)==int((n)/sim1->nbInClusters));
+//                    plast.WIILocal[m][n] *=  (int(m/sim1->nbInClusters)==int((n)/sim1->nbInClusters));
+                    plast.WIILocal[m][n] *= plast.allowedConnections[m][n] ;
+                    plast.VgapLocal[m][n] *= plast.allowedConnections[m][n] ;
                     }
                 }
             }
 
         }
         util.writemap("GAP0", plast.VgapLocal);
+        util.writemap("WII", plast.WIILocal);
 
         //------------------
 
@@ -392,7 +403,7 @@ int main(int argc, const char * argv[])
                 noise[i] = dist(e2);
                 Iback[i] = Iback[i] + dt/(sim1->tau_I*1.0) * (-Iback[i] + noise[i]);
 //                Ieff[i] = Iback[i] / sqrt(1/(2*(sim1->tau_I/dt))) * sim1->TsigI + sim1->TImean;
-                Ieff[i] = Iback[i] / sqrt(1/(2*(sim1->tau_I/dt))) * sim1->TsigI + sim1->TImean*((i>nbInClusters)*(t>300) + (i<=nbInClusters) );
+                Ieff[i] = Iback[i] / sqrt(1/(2*(sim1->tau_I/dt))) * sim1->TsigI + sim1->TImean*((i>sim1->nbInClusters)*(t>300) + (i<=sim1->nbInClusters) );
 
 
                 // sum
@@ -406,17 +417,20 @@ int main(int argc, const char * argv[])
                     Igap[i] = 0;
                     synSpikes = 0;
                     for (int k = 0; k<sim1->NI; k++) {
-                        Igap[i] += plast.VgapLocal[i][k] * (v[k] - v[i]);
+                        Igap[i] += (plast.VgapLocal[i][k]) * (v[k] - v[i]);
 
                         if (sim1->CLUSTER and sim1->localWII) {
-//                            synSpikes += plast.WIILocal[i][k] * ((vv[k] )) ;//* (int(i/nbInClusters)==int(k/nbInClusters));
-//                            synSpikes += plast.WII * ((vv[k])) * (i!=k) * (int(i/nbInClusters)==int(k/nbInClusters)) ;
-                            synSpikes += plast.WIILocal[i][k] * ((vv[k])) * (i!=k) * (int(i/nbInClusters)==int(k/nbInClusters)) ;
+//                            synSpikes += plast.WIILocal[i][k] * ((vv[k] )) ;//* (int(i/sim1->nbInClusters)==int(k/sim1->nbInClusters));
+//                            synSpikes += plast.WII * ((vv[k])) * (i!=k) * (int(i/sim1->nbInClusters)==int(k/sim1->nbInClusters)) ;
+                            // synSpikes += plast.WIILocal[i][k] * ((vv[k])) * (i!=k) * (int(i/sim1->nbInClusters)==int(k/sim1->nbInClusters));
+                            // block some connections
+                            synSpikes += plast.WIILocal[i][k] * ((vv[k])) * (i!=k) * (int(i/sim1->nbInClusters)==int(k/sim1->nbInClusters)) * plast.allowedConnections[i][k] ;
                         }
 
                     }
                     if (sim1->CLUSTER and sim1->localWII) {
-                        Ichem[i] += dt/(sim1->tau_syn*1.) * (-Ichem[i]
+                        // add a different time constants for neurons in the second cluster
+                        Ichem[i] += dt/(sim1->tau_syn*(1.)) * (-Ichem[i]
                                                              + synSpikes
 //                                                             + plast.WII * (NbSpikesI)// - ( v[i] > 25.0))
                                                              + plast.WEI * NbSpikesE);
@@ -470,9 +484,17 @@ int main(int argc, const char * argv[])
                         v[i] = -40;
                         u[i] += 50;
                     }
+                } else if (sim1->model == "gp-izh-subnetworks"){
+                    v[i] += dt / (15+(sim1->tauv-15)*(i>sim1->nbInClusters)) * ((v[i] + 60) * (v[i] + 50) - 20*u[i] + 8 * I[i]);
+                    u[i] += dt * 0.044 * ((v[i] + 55) - u[i]);
+                    vv[i] = v[i] > 25.0;
+                    if (vv[i]) {
+                        v[i] = -40;
+                        u[i] += 50;
+                    }
                 } else if (sim1->model=="TRN") {
                     // TRN EQUATIONS --------------------------------------
-                    v[i] = v[i] + dt * (1./40.) * (0.25 * (pow(v[i],2) + 110 * v[i] + 45*65) - u[i] + I[i]);
+                    v[i] = v[i] + dt * (1./40.) * (1 + 0.5*(i>sim1->nbInClusters)) * (0.25 * (pow(v[i],2) + 110 * v[i] + 45*65) - u[i] + I[i]);
                     u[i] = u[i] + dt * 0.015 * ( b * (v[i] + 65) - u[i] );
                     vv[i] = v[i] > 0.0;
                     if (vv[i]) {
@@ -524,11 +546,19 @@ int main(int argc, const char * argv[])
 
                     NewNbSpikesI++;
 
+                    if (sim1->CLUSTER) {
+                        spikes_idx.push_back(t);
+                        spikes_idy.push_back(i);
+                    }
+
                     if ( !sim1->CONSOLE and sim1->SPIKES and  sim1->saveTime(t))
                     {
                         // save spikes only close to transitions
-                        spikes_idx.push_back(t*dt);
-                        spikes_idy.push_back(i);
+                        if (!sim1->CLUSTER) {
+                            spikes_idx.push_back(t*dt);
+                            spikes_idy.push_back(i);
+                        }
+
                         if (t>200/dt) {
                             spikeTimes[i].push_back(t);
                         }
@@ -639,6 +669,10 @@ int main(int argc, const char * argv[])
         if (sim1->FOURIER){
             vm.push_back(getAvg<double>(v, sim1->NI+1, sim1->N));
         }
+        if (sim1->CLUSTER){
+            current1.push_back(getAvg<double>(I, sim1->nbInClusters, 0));
+            current2.push_back(getAvg<double>(I, sim1->nbInClusters, sim1->NI));
+        }
         pm.push_back(getAvg<double>(p, sim1->NI));
         qm.push_back(getAvg<double>(q, sim1->NI));
         lm.push_back(getAvg<double>(LowSp, sim1->NI));
@@ -741,8 +775,12 @@ int main(int argc, const char * argv[])
         util.writedata("spike_y", spikes_idy);
         util.writedata("spike_x_tc", spikes_idx_tc);
         util.writedata("spike_y_tc", spikes_idy_tc);
-        util.writedata("vm", vm);
         util.writedata("ssp", ssp);
+
+        if (sim1->CLUSTER) {
+            util.writedata("current1", current1);
+            util.writedata("current2", current2);
+        }
 
 
 //        util.writedata("resonance", abs(res_val));
@@ -753,8 +791,7 @@ int main(int argc, const char * argv[])
 //            util.writedata("amp", FFT.amp);
         }
         
-//        util.writedata("current1", current1);
-//        util.writedata("current2", current2);
+
 //        util.writedata("current3", current3);
         
         util.writedata("sspE", ssp1);
@@ -772,7 +809,7 @@ int main(int argc, const char * argv[])
         }
         else {
             util.writemap("GAP", plast.VgapLocal);
-            util.writemap("WII", plast.WIILocal);
+//            util.writemap("WII", plast.WIILocal);
             cout << "gamma_c avg : " << meanG/counter << endl;
         }
     }
