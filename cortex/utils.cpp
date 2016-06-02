@@ -234,7 +234,7 @@ void Plasticity::plasticityLocal(double *burstTh, bool *topotentiate, int t) {
     }
 }
 
-void MovingAverage::compute(double instantMeanG, int t, int T) {
+    void MovingAverage::compute(double instantMeanG, int t, int T) {
     if (t % int(T / 1000) == 0 and t>0) {
         meanG /= (counter * 1.0);
         outputVec.push_back(meanG);
@@ -243,7 +243,7 @@ void MovingAverage::compute(double instantMeanG, int t, int T) {
     }
     else if (t * sim.dt > 100) {
         counter++;
-        meanG += instantMeanG * sim.NI;
+        meanG += instantMeanG * sqrt(sim.nbOfGapJunctions);
     }
 }
 

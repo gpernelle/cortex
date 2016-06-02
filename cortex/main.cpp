@@ -119,6 +119,8 @@ int main(int argc, const char * argv[])
     sim1->initDuration();
     vector<double> g {};
     MovingAverage mvgamma(g);
+    MovingAverage mvgammaN1(g);
+    MovingAverage mvgammaN2(g);
     Fourier FFT;
     Corr correlation;
     pl(sim1->DEBUG, __LINE__);
@@ -193,6 +195,8 @@ int main(int argc, const char * argv[])
     // load simulation data
     //
     mvgamma.sim = *sim1;
+    mvgammaN1.sim = *sim1;
+    mvgammaN2.sim = *sim1;
     FFT.sim = *sim1;
     plast.sim = *sim1;
     correlation.sim = *sim1;
@@ -702,13 +706,29 @@ int main(int argc, const char * argv[])
                 else if (sim1->PLAST_RULE == "spiking") plast.plasticityLocal(p, vv, t);
                 else if (sim1->PLAST_RULE == "passive") plast.plasticityLocal(p, passive, t);
                 double instantMeanG = 0;
+                double instantMeanGN1 = 0;
+                double instantMeanGN2 = 0;
                 for (int i = 0; i < sim1->NI; i++) {
                     for (int j = 0; j < i; j++) {
                         instantMeanG += plast.VgapLocal[i][j];
                     }
                 }
+                for (int i = 0; i < sim1->NI/2; i++) {
+                    for (int j = 0; j < sim1->NI/2; j++) {
+                        instantMeanGN1 += plast.VgapLocal[i][j];
+                    }
+                }
+                for (int i = sim1->NI/2; i < sim1->NI; i++) {
+                    for (int j = sim1->NI/2; j < sim1->NI; j++) {
+                        instantMeanGN2 += plast.VgapLocal[i][j];
+                    }
+                }
                 instantMeanG /= (sim1->NI * (sim1->NI - 1) / 2);
+                instantMeanGN1 /= pow(sim1->NI/2,2);
+                instantMeanGN2 /= pow(sim1->NI/2,2);
                 mvgamma.compute(instantMeanG, t, T); //moving average
+                mvgammaN1.compute(instantMeanGN1*0.5, t, T); //moving average
+                mvgammaN2.compute(instantMeanGN2*0.5, t, T); //moving average
             }
         }
         
@@ -766,6 +786,8 @@ int main(int argc, const char * argv[])
         // SAVE DATA NORMAL MODE
         //
         util.writedata("gamma", mvgamma.outputVec);
+        util.writedata("gammaN1", mvgammaN1.outputVec);
+        util.writedata("gammaN2", mvgammaN2.outputVec);
         util.writedata("stimulation", stimulation);
         util.writedata("correlation", corrVect);
         util.writedata("p", pm);

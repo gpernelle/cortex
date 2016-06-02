@@ -13,7 +13,8 @@ import pylab as plt
 import ipyparallel as ipp
 import re, csv, os, datetime, os, sys, cubehelix, multiprocessing, sh, subprocess, math, socket
 from matplotlib import gridspec
-from matplotlib.pyplot import cm 
+from matplotlib.pyplot import cm
+import matplotlib.colors as colors
 from bokeh.plotting import figure, show, output_file, save
 from matplotlib.mlab import psd
 from scipy.misc import comb
