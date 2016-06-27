@@ -121,6 +121,7 @@ int main(int argc, const char * argv[])
     MovingAverage mvgamma(g);
     MovingAverage mvgammaN1(g);
     MovingAverage mvgammaN2(g);
+    MovingAverage mvgammaNshared(g);
     Fourier FFT;
     Corr correlation;
     pl(sim1->DEBUG, __LINE__);
@@ -167,6 +168,8 @@ int main(int argc, const char * argv[])
     vector<double> current3;
     vector<double> ssp3;
     vector<double> vm;
+    vector<double> voltage;  // for DEBUG
+    vector<double> adaptation; // for DEBUG
     vector<double> pm;
     vector<double> qm;
     vector<double> lm;
@@ -197,6 +200,7 @@ int main(int argc, const char * argv[])
     mvgamma.sim = *sim1;
     mvgammaN1.sim = *sim1;
     mvgammaN2.sim = *sim1;
+    mvgammaNshared.sim = *sim1;
     FFT.sim = *sim1;
     plast.sim = *sim1;
     correlation.sim = *sim1;
@@ -677,6 +681,10 @@ int main(int argc, const char * argv[])
             current1.push_back(getAvg<double>(I, sim1->nbInClusters, 0));
             current2.push_back(getAvg<double>(I, sim1->nbInClusters, sim1->NI));
         }
+        if (sim1->DEBUG) {
+            voltage.push_back(getAvg<double>(v, sim1->NI));
+            adaptation.push_back(getAvg<double>(u, sim1->NI));
+        }
         pm.push_back(getAvg<double>(p, sim1->NI));
         qm.push_back(getAvg<double>(q, sim1->NI));
         lm.push_back(getAvg<double>(LowSp, sim1->NI));
@@ -708,27 +716,34 @@ int main(int argc, const char * argv[])
                 double instantMeanG = 0;
                 double instantMeanGN1 = 0;
                 double instantMeanGN2 = 0;
+                double instantMeanGshared = 0;
                 for (int i = 0; i < sim1->NI; i++) {
                     for (int j = 0; j < i; j++) {
                         instantMeanG += plast.VgapLocal[i][j];
                     }
                 }
-                for (int i = 0; i < sim1->NI/2; i++) {
-                    for (int j = 0; j < sim1->NI/2; j++) {
+                for (int i = 0; i < sim1->NI/2 - sim1->sharedG; i++) {
+                    for (int j = 0; j < sim1->NI/2 - sim1->sharedG; j++) {
                         instantMeanGN1 += plast.VgapLocal[i][j];
                     }
                 }
-                for (int i = sim1->NI/2; i < sim1->NI; i++) {
-                    for (int j = sim1->NI/2; j < sim1->NI; j++) {
+                for (int i = sim1->NI/2 + sim1->sharedG; i < sim1->NI; i++) {
+                    for (int j = sim1->NI/2 + sim1->sharedG; j < sim1->NI; j++) {
                         instantMeanGN2 += plast.VgapLocal[i][j];
                     }
                 }
+                for (int i = sim1->NI/2 - sim1->sharedG; i < sim1->NI/2 + sim1->sharedG; i++) {
+                    for (int j = sim1->NI/2 - sim1->sharedG; j < sim1->NI/2 + sim1->sharedG; j++) {
+                        instantMeanGshared += plast.VgapLocal[i][j];
+                    }
+                }
                 instantMeanG /= (sim1->NI * (sim1->NI - 1) / 2);
-                instantMeanGN1 /= pow(sim1->NI/2,2);
-                instantMeanGN2 /= pow(sim1->NI/2,2);
-                mvgamma.compute(instantMeanG, t, T); //moving average
-                mvgammaN1.compute(instantMeanGN1*0.5, t, T); //moving average
-                mvgammaN2.compute(instantMeanGN2*0.5, t, T); //moving average
+                instantMeanGN1 /= pow(sim1->NI/2 - sim1->sharedG,2);
+                instantMeanGN2 /= pow(sim1->NI/2 - sim1->sharedG,2);
+                mvgamma.compute(instantMeanG*2, t, T); //moving average
+                mvgammaN1.compute(instantMeanGN1, t, T); //moving average
+                mvgammaN2.compute(instantMeanGN2, t, T); //moving average
+                mvgammaNshared.compute(instantMeanGshared, t, T); //moving average
             }
         }
         
@@ -788,6 +803,8 @@ int main(int argc, const char * argv[])
         util.writedata("gamma", mvgamma.outputVec);
         util.writedata("gammaN1", mvgammaN1.outputVec);
         util.writedata("gammaN2", mvgammaN2.outputVec);
+        util.writedata("gammaNshared", mvgammaNshared.outputVec);
+
         util.writedata("stimulation", stimulation);
         util.writedata("correlation", corrVect);
         util.writedata("p", pm);
@@ -795,9 +812,11 @@ int main(int argc, const char * argv[])
         util.writedata("LowSp", lm);
         util.writedata("spike_x", spikes_idx);
         util.writedata("spike_y", spikes_idy);
-        util.writedata("spike_x_tc", spikes_idx_tc);
-        util.writedata("spike_y_tc", spikes_idy_tc);
+//        util.writedata("spike_x_tc", spikes_idx_tc);
+//        util.writedata("spike_y_tc", spikes_idy_tc);
         util.writedata("ssp", ssp);
+        util.writedata("v", voltage);
+        util.writedata("u", adaptation);
 
         if (sim1->CLUSTER) {
             util.writedata("current1", current1);

@@ -15,7 +15,7 @@ void Simulation::initData() {
     localWII = true;
 //    PLAST_RULE = "passive";
     SPINDLE_LOWPASS = false;
-    COMPUTE_PLAST = true;
+    COMPUTE_PLAST = false;
     MIN_PLAST_THRESH = false;
     CORRELATION = false;
     FOURIER = true;
@@ -24,12 +24,13 @@ void Simulation::initData() {
     SOFT = true;
     GLOB = false;
     RESONANCE = false;
-    DEBUG = false;
+    DEBUG = true;
 
     LTD = 0;
     LTP = 0;
 
     dt = 0.25;
+//    dt = 1.00;
     T = 1000 / dt;
     before = T;
     after = T;
@@ -57,7 +58,13 @@ void Simulation::initData() {
             root = "/Users/";
             computer = "GP1514";
             directory = "/Dropbox/ICL-2014/Code/C-Code/cortex/data/";
-        } else {
+        }
+        else if (!strcmp(hostname,"CNL-Brain1")){
+            root = "/mnt/DATA/";
+            computer = "gp1514";
+            directory = "/Projects/github/cortex/data/";
+        }
+        else {
             root = "/Users/";
             computer = "guillaume";
             directory = "/Projects/github/cortex/data/";
@@ -223,6 +230,7 @@ void Plasticity::plasticityLocal(double *burstTh, bool *topotentiate, int t) {
         //        #pragma omp parallel for num_threads(NUM_THREADS)
         for (int i = 0; i < sim.NI; i++) {
             for (int j = 0; j < i; j++) {
+                // TYPO: no VgapIN as factor?
                 dG = (i != j) * (VgapIN * sim.dt * (-A_gapD * burstTh[i] +
                                                     A_gapP * (VgapIN - VgapLocal[i][j]) / VgapIN * (topotentiate[i])));
                 VgapLocal[i][j] = max(0.0, VgapLocal[i][j] + 2 * dG) * allowedConnections[i][j];
