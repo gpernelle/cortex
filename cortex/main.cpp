@@ -449,8 +449,8 @@ int main(int argc, const char * argv[])
                                                                        + plast.WEI * NbSpikesE);
                     }
                     if (synSpikes!=0 or (plast.WII * (NbSpikesI - ( v[i] > 25.0)))!=0) {
-                        cout << "1:" << synSpikes << endl;
-                        cout << "2:" << plast.WII * (NbSpikesI - (v[i] > 25.0)) << endl;
+//                        cout << "1:" << synSpikes << endl;
+//                        cout << "2:" << plast.WII * (NbSpikesI - (v[i] > 25.0)) << endl;
                     }
 
 
