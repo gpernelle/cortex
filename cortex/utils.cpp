@@ -70,9 +70,17 @@ void Simulation::initData() {
             directory = "/Projects/github/cortex/data/";
         }
     #elif __linux__
-        root = "/home/";
-        computer = "gp1514";
-        directory = "/Projects/github/cortex/data/";
+        if (!strcmp(hostname,"CNL-Brain1")){
+                root = "/mnt/DATA/";
+                computer = "gp1514";
+                directory = "/Projects/github/cortex/data/";
+        }
+        else {
+            root = "/home/";
+            computer = "gp1514";
+            directory = "/Projects/github/cortex/data/";
+        }
+
     #endif
 
     cout << hostname << endl;
