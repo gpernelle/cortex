@@ -15,7 +15,7 @@ void Simulation::initData() {
     localWII = true;
 //    PLAST_RULE = "passive";
     SPINDLE_LOWPASS = false;
-    COMPUTE_PLAST = false;
+    COMPUTE_PLAST = true;
     MIN_PLAST_THRESH = false;
     CORRELATION = false;
     FOURIER = true;
