@@ -722,18 +722,18 @@ int main(int argc, const char * argv[])
                         instantMeanG += plast.VgapLocal[i][j];
                     }
                 }
-                for (int i = 0; i < sim1->NI/2 - sim1->sharedG; i++) {
-                    for (int j = 0; j < sim1->NI/2 - sim1->sharedG; j++) {
+                for (int i = 0; i < (sim1->NI/2 - sim1->sharedG); i++) {
+                    for (int j = 0; j < (sim1->NI/2 - sim1->sharedG); j++) {
                         instantMeanGN1 += plast.VgapLocal[i][j];
                     }
                 }
-                for (int i = sim1->NI/2 + sim1->sharedG; i < sim1->NI; i++) {
-                    for (int j = sim1->NI/2 + sim1->sharedG; j < sim1->NI; j++) {
+                for (int i = (sim1->NI/2 + sim1->sharedG); i < sim1->NI; i++) {
+                    for (int j = (sim1->NI/2 + sim1->sharedG); j < sim1->NI; j++) {
                         instantMeanGN2 += plast.VgapLocal[i][j];
                     }
                 }
-                for (int i = sim1->NI/2 - sim1->sharedG; i < sim1->NI/2 + sim1->sharedG; i++) {
-                    for (int j = sim1->NI/2 - sim1->sharedG; j < sim1->NI/2 + sim1->sharedG; j++) {
+                for (int i = (sim1->NI/2 - sim1->sharedG); i < (sim1->NI/2 + sim1->sharedG); i++) {
+                    for (int j = (sim1->NI/2 - sim1->sharedG); j < (sim1->NI/2 + sim1->sharedG); j++) {
                         instantMeanGshared += plast.VgapLocal[i][j];
                     }
                 }
