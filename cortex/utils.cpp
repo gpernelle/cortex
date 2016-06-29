@@ -233,7 +233,7 @@ void Plasticity::plasticity(double *burstTh, bool *topotentiate, int t) {
 }
 
 void Plasticity::plasticityLocal(double *burstTh, bool *topotentiate, int t) {
-    double instantMeanG = 0;
+//    double instantMeanG = 0;
     double dG = 0;
     if (t * sim.dt > 100) {
         //        #pragma omp parallel for num_threads(NUM_THREADS)
@@ -241,13 +241,13 @@ void Plasticity::plasticityLocal(double *burstTh, bool *topotentiate, int t) {
             for (int j = 0; j < i; j++) {
                 // TYPO: no VgapIN as factor?
                 dG = (i != j) * (VgapIN * sim.dt * (-A_gapD * burstTh[i] +
-                                                    A_gapP * (VgapIN - VgapLocal[i][j]) / VgapIN * (topotentiate[i])));
+                                                    A_gapP * (VgapIN - VgapLocal[i][j]) / VgapIN * (topotentiate[i]*1.0)));
                 VgapLocal[i][j] = max(0.0, VgapLocal[i][j] + 2 * dG) * allowedConnections[i][j];
                 VgapLocal[j][i] = VgapLocal[i][j];
-                instantMeanG += VgapLocal[i][j];
+//                instantMeanG += VgapLocal[i][j];
             }
         }
-        instantMeanG /= (sim.NI * (sim.NI - 1) / 2);
+//        instantMeanG /= (sim.NI * (sim.NI - 1) / 2);
     }
 }
 

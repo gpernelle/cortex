@@ -724,7 +724,7 @@ int main(int argc, const char * argv[])
                 }
                 for (int i = 0; i < (sim1->NI/2 - sim1->sharedG); i++) {
                     for (int j = 0; j < (sim1->NI/2 - sim1->sharedG); j++) {
-                        instantMeanGN1 += plast.VgapLocal[i][j];
+                        instantMeanGN1 += plast.VgapLocal[i][j]*1.0;
                     }
                 }
                 for (int i = (sim1->NI/2 + sim1->sharedG); i < sim1->NI; i++) {
