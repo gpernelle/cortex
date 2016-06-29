@@ -744,6 +744,7 @@ int main(int argc, const char * argv[])
                 mvgammaN1.compute(instantMeanGN1, t, T); //moving average
                 mvgammaN2.compute(instantMeanGN2, t, T); //moving average
                 mvgammaNshared.compute(instantMeanGshared, t, T); //moving average
+//                cout << "gamma\t" << instantMeanGN1 << endl;
             }
         }
         
@@ -798,11 +799,13 @@ int main(int argc, const char * argv[])
     // SAVE DATA
     //
     if (!sim1->CONSOLE and !sim1->RESONANCE) {
+//    if (1) {
         // SAVE DATA NORMAL MODE
         //
         util.writedata("gamma", mvgamma.outputVec);
         util.writedata("gammaN1", mvgammaN1.outputVec);
         util.writedata("gammaN2", mvgammaN2.outputVec);
+//        cout <<"wirtestuff" << mvgammaN2.outputVec[300]<< endl;
         util.writedata("gammaNshared", mvgammaNshared.outputVec);
 
         util.writedata("stimulation", stimulation);
