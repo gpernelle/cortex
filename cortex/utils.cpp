@@ -24,7 +24,7 @@ void Simulation::initData() {
     SOFT = true;
     GLOB = false;
     RESONANCE = false;
-    DEBUG = true;
+    DEBUG = false;
 
     LTD = 0;
     LTP = 0;
@@ -83,12 +83,12 @@ void Simulation::initData() {
 
     #endif
 
-    cout << hostname << endl;
-    cout << "0 if ICL beast:" << strcmp(hostname,"dyn1147-170.insecure.ic.ac.uk")<< endl;
-    cout << "0 if ICL workstation:" << strcmp(hostname,"CNL-Brain1")<< endl;
+    //cout << hostname << endl;
+    //cout << "0 if ICL beast:" << strcmp(hostname,"dyn1147-170.insecure.ic.ac.uk")<< endl;
+    //cout << "0 if ICL workstation:" << strcmp(hostname,"CNL-Brain1")<< endl;
     ext = "";
     path = root + computer + directory;
-    cout << path << endl;
+    //cout << path << endl;
 
 //    root = "/Users/";
 //    computer = "GP1514";

@@ -828,7 +828,7 @@ int main(int argc, const char * argv[])
 
 
 //        util.writedata("resonance", abs(res_val));
-        cout << "resonance: " <<  abs(res_val) << "\t" << abs(res_val)/T/N/dt << endl;
+        //cout << "resonance: " <<  abs(res_val) << "\t" << abs(res_val)/T/N/dt << endl;
         if (sim1->FOURIER) {
             util.writedata("vm", vm);
 //            util.writedata("freq", FFT.freq);
@@ -846,7 +846,7 @@ int main(int argc, const char * argv[])
 //        util.writedata("RON_V", RON_V);
 //        util.writedata("V", vVect);
 
-        cout << " Data written in  " << util.sim.path << endl;
+        //cout << " Data written in  " << util.sim.path << endl;
 
         if (sim1->GLOB) {
             cout << "gamma_c : " << plast.Vgap*sim1->NI <<"\tRON_I:\t" << meanRON_I << endl;
@@ -854,7 +854,7 @@ int main(int argc, const char * argv[])
         else {
             util.writemap("GAP", plast.VgapLocal);
 //            util.writemap("WII", plast.WIILocal);
-            cout << "gamma_c avg : " << meanG/counter << endl;
+            //cout << "gamma_c avg : " << meanG/counter << endl;
         }
     }
     else if (sim1->CONSOLE) {
@@ -870,15 +870,15 @@ int main(int argc, const char * argv[])
         string path_csv =  sim1->root+sim1->computer+sim1->directory+namecsv+".csv";
         ofstream csvFile(path_csv, std::ofstream::out | std::ofstream::app);
         csvFile << plast.Vgap*sim1->NI << ";" << sim1->TImean << ";" << resultCorr << ";" << meanSpike/T << ";" << meanSpikeNonBurst/T << ";" << meanBurst/T <<";"<< FFT.fftFreq<<";"<< FFT.fftPower<< endl;
-        cout << "Data written: " << plast.Vgap*N << " " << sim1->TImean << "\tCorr:" << resultCorr ;
-        cout << "\tSp:\t" << meanSpike/T << "\tB:\t" << meanBurst/T;
-        cout << "\tfreq: " << FFT.fftFreq << "\tpower: " << FFT.fftPower <<endl;
+        //cout << "Data written: " << plast.Vgap*N << " " << sim1->TImean << "\tCorr:" << resultCorr ;
+        //cout << "\tSp:\t" << meanSpike/T << "\tB:\t" << meanBurst/T;
+        //cout << "\tfreq: " << FFT.fftFreq << "\tpower: " << FFT.fftPower <<endl;
     }
     if (sim1->RESONANCE) {
         string path_csv =  sim1->root+sim1->computer+sim1->directory+"resonance.csv";
         ofstream csvFile(path_csv, std::ofstream::out | std::ofstream::app);
         csvFile << sim1->model<< ";" << f << ";" << sim1->stimulation+50.0 << ";" << abs(res_val) << ";" << endl;
-        cout << "Data written: " << f<< "\t" << abs(res_val) << endl ;
+        //cout << "Data written: " << f<< "\t" << abs(res_val) << endl ;
 
     }
     
