@@ -6,12 +6,7 @@
 from __future__ import division
 from IO import *
 from cycler import cycler
-import matplotlib as mpl
-get_ipython().magic('matplotlib inline')
 from numba import autojit
-
-get_ipython().magic('load_ext autoreload')
-get_ipython().magic('autoreload 2')
 
 today = datetime.date.today()
 todayStr = '%04d%02d%02d' % (today.year, today.month, today.day)
@@ -20,15 +15,6 @@ DIRECTORY = os.path.expanduser("~/Dropbox/0000 - PhD/figures/"+todayStr+"/")
 if not os.path.exists(DIRECTORY):
     os.makedirs(DIRECTORY)
     
-from bokeh.io import output_notebook
-output_notebook()
-
-
-# In[2]:
-
-get_ipython().run_cell_magic('javascript', '', 'IPython.OutputArea.auto_scroll_threshold = 9999;')
-
-
 # In[3]:
 
 # Instantiate classes
@@ -38,7 +24,6 @@ gr = GRAPH(cortex)
 
 # styling
 gammaColor = '#00cc99'
-
 
 # In[7]:
 
@@ -90,9 +75,9 @@ FILENAME = DIRECTORY + "with_plast-ok.csv"
 
 for c.tauv in taulist[:4]:
     for c.d2 in [60000]:
-        for c.sWII in sWIIList[1:]:
-            for c.sG in sGList[:3]:
-                for c.LTD in LTDList:
+        for c.sWII in sWIIList[:]:
+            for c.sG in sGList[:]:
+                for c.LTD in LTDList[1:]:
                     c.LTP = c.ratio * c.LTD
                     print(c.tauv, c.sWII, c.sG)
                     Parallel(n_jobs=50)(delayed(c.readToCSV(filename=FILENAME))(i=0, tauv=c.tauv) for c.tauv in taulist)
