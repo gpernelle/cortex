@@ -68,3 +68,19 @@ def resonanceFS(F, tauv=15):
         #         var = np.max(res_v)-np.min(res_v)
         res_var[k] = var
     return res_var
+
+@autojit
+def fourier(signal):
+    f_val, p_val = maxPowerFreq(signal[int(signal.shape[0] / 2):], 0.25 / 1000)
+    return [f_val, p_val]
+
+@autojit
+def maxPowerFreq(y, dt):
+    # return the max power of the signal and its associated frequency
+    fs = 1. / dt
+    y = y - np.mean(y)
+    t = np.arange(0, y.shape[0], 1)
+    p1, f1 = psd(y, NFFT=len(t), pad_to=len(t), Fs=fs)
+    powerVal = 10 * np.log10(max(p1))
+    powerFreq = np.argmax(p1) * np.max(f1) / len(f1)
+    return powerFreq, powerVal
