@@ -1,4 +1,4 @@
-# Install script for directory: /Users/GP1514/Dropbox/ICL-2014/Code/C-Code/cortex/cortex
+# Install script for directory: /Users/guillaume/Dropbox/ICL-2014/Code/C-Code/cortex/cortex
 
 # Set the install prefix
 if(NOT DEFINED CMAKE_INSTALL_PREFIX)
@@ -35,5 +35,5 @@ endif()
 
 string(REPLACE ";" "\n" CMAKE_INSTALL_MANIFEST_CONTENT
        "${CMAKE_INSTALL_MANIFEST_FILES}")
-file(WRITE "/Users/GP1514/Dropbox/ICL-2014/Code/C-Code/cortex/cortex/${CMAKE_INSTALL_MANIFEST}"
+file(WRITE "/Users/guillaume/Dropbox/ICL-2014/Code/C-Code/cortex/cortex/${CMAKE_INSTALL_MANIFEST}"
      "${CMAKE_INSTALL_MANIFEST_CONTENT}")

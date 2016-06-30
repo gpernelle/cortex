@@ -56,7 +56,7 @@ void Simulation::initData() {
     #ifdef __APPLE__
         if(!strcmp(hostname,"dyn1147-170.insecure.ic.ac.uk") or !strcmp(hostname,"ip-static-94-242-199-231.server.lu") or (1==1) ){
             root = "/Users/";
-            computer = "GP1514";
+            computer = "guillaume";
             directory = "/Dropbox/ICL-2014/Code/C-Code/cortex/data/";
         }
         else if (!strcmp(hostname,"CNL-Brain1")){

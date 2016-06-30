@@ -62,25 +62,14 @@ sGList = np.arange(0,30,2)
 LTDList = [1e-9*4.7e-6 * c.FACT * c.N, 1e-0*4.7e-6 * c.FACT * c.N]
 taulist = np.arange(15,95,2)
 
-# # For testing
-# c.N=20
-# for c.tauv in taulist[:4]:
-#     for c.d2 in [1000]:
-#         for c.sWII in sWIIList:
-#             for c.sG in sGList[:3]:
-#                 for c.LTD in LTDList:b
-#                     c.runSimulation()
 
 FILENAME = DIRECTORY + "with_plast-ok.csv"
 
-for c.tauv in taulist[:4]:
-    for c.d2 in [60000]:
-        for c.sWII in sWIIList[:]:
-            for c.sG in sGList[:]:
-                for c.LTD in LTDList[1:]:
-                    c.LTP = c.ratio * c.LTD
-                    print(c.tauv, c.sWII, c.sG)
-                    Parallel(n_jobs=50)(delayed(c.readToCSV(filename=FILENAME))(i=0, tauv=c.tauv) for c.tauv in taulist)
-                    c.readToCSV(filename="test.csv")
+
+for c.LTD in LTDList[1:]:
+    for c.sWII in sWIIList:
+        for c.sG in sGList:
+            c.LTP = c.ratio * c.LTD
+            Parallel(n_jobs=56)(delayed(c.readToCSV)(filename=FILENAME, tauv=tauv, sG=c.sG, LTD=c.LTD, LTP=c.LTP, sWII=c.sWII) for tauv in taulist)
 
 
