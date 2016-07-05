@@ -88,6 +88,8 @@ int main(int argc, const char * argv[])
                 tau_q = atof(argv[i + 1]);
             } else if (!strcmp(argv[i], "-thq")) {
                 th_q = atof(argv[i + 1]);
+            } else if (!strcmp(argv[i], "-plast")) {
+                sim1->COMPUTE_PLAST = (1==atoi(argv[i + 1])) ;
             } else if (!strcmp(argv[i], "-LTP")) {
                 LTP = atof(argv[i + 1]);
             } else if (!strcmp(argv[i], "-LTD")) {

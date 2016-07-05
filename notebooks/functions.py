@@ -84,3 +84,13 @@ def maxPowerFreq(y, dt):
     powerVal = 10 * np.log10(max(p1))
     powerFreq = np.argmax(p1) * np.max(f1) / len(f1)
     return powerFreq, powerVal
+
+def svg2pdf(filename, path = '/Users/GP1514/Dropbox/0000_PhD/figures/20160704/'):
+    subprocess.check_output(["inkscape", "--file", '%s%s.svg'%(path, filename),
+                           '--export-area-drawing','--without-gui', '--export-pdf',
+                            '%s%s.pdf'%(path,filename), '--export-latex'])
+
+def svg2eps(filename, path = '/Users/GP1514/Dropbox/0000_PhD/figures/20160704/'):
+    subprocess.check_output(["inkscape", '%s%s.svg'%(path, filename),
+                            '-E', '%s%s.eps'%(path,filename), '--without-gui',
+                             '--export-ignore-filters','--export-ps-level=3'])

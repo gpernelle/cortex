@@ -19,6 +19,7 @@ from bokeh.plotting import figure, show, output_file, save
 from matplotlib.mlab import psd
 from scipy.misc import comb
 from scipy import sparse, signal
+import svgutils.transform as sg
 
 
 cx4 = cubehelix.cmap(reverse=False, start=0., rot=0.5)
@@ -38,6 +39,6 @@ matplotlib.rc('axes', facecolor = "white")
 
 today = datetime.date.today()
 todayStr = '%04d%02d%02d' % (today.year, today.month, today.day)
-DIRECTORY = os.path.expanduser("~/Dropbox/0000 - PhD/figures/"+todayStr+"/")
+DIRECTORY = os.path.expanduser("~/Dropbox/0000_PhD/figures/"+todayStr+"/")
 if not os.path.exists(DIRECTORY):
     os.makedirs(DIRECTORY)

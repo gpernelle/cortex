@@ -56,7 +56,7 @@ c.with_currents = True
 c.dt =0.25
 
 
-sWIIList = [0,10]
+sWIIList = [0,10,50]
 sGList = [0,1,5,10,15,20,25]
 sGList = np.arange(0,30,2)
 LTDList = [1e-9*4.7e-6 * c.FACT * c.N, 1e-0*4.7e-6 * c.FACT * c.N]
@@ -66,7 +66,7 @@ taulist = np.arange(15,95,2)
 FILENAME = DIRECTORY + "with_plast-ok.csv"
 
 
-for c.LTD in LTDList[1:]:
+for c.LTD in LTDList[:]:
     for c.sWII in sWIIList:
         for c.sG in sGList:
             c.LTP = c.ratio * c.LTD
