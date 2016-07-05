@@ -791,9 +791,9 @@ int main(int argc, const char * argv[])
     if (!sim1->CONSOLE) {
         time (&endtime);
         double dif = difftime (endtime,starttime);
-        cout << "*****************************" << endl;
-        printf ("Elasped time is %.2lf seconds.", dif );
-        cout << " End of simulation: " << endl;
+//        cout << "*****************************" << endl;
+//        printf ("Elasped time is %.2lf seconds.", dif );
+//        cout << " End of simulation: " << endl;
     }
 
 
