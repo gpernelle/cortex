@@ -871,7 +871,13 @@ int main(int argc, const char * argv[])
         double resultCorr = correlation.computeCorrelation(spikeTimesCor, dt);
         string path_csv =  sim1->root+sim1->computer+sim1->directory+namecsv+".csv";
         ofstream csvFile(path_csv, std::ofstream::out | std::ofstream::app);
+        // ACTIVITY DIAG
         csvFile << plast.Vgap*sim1->NI << ";" << sim1->TImean << ";" << resultCorr << ";" << meanSpike/T << ";" << meanSpikeNonBurst/T << ";" << meanBurst/T <<";"<< FFT.fftFreq<<";"<< FFT.fftPower<< endl;
+        // ACTIVITY FOR SUBNETs
+        csvFile << plast.Vgap*sim1->NI << ";" << sim1->TImean << ";" \
+            << resultCorr << ";" << meanSpike/T << ";" << meanSpikeNonBurst/T \
+            << ";" << meanBurst/T <<";"<< FFT.fftFreq<<";"<< FFT.fftPower\
+            << ";" << sim1->sharedG << ";" << sim1->sharedWII<< ";" << sim1->tauv << endl;
         //cout << "Data written: " << plast.Vgap*N << " " << sim1->TImean << "\tCorr:" << resultCorr ;
         //cout << "\tSp:\t" << meanSpike/T << "\tB:\t" << meanBurst/T;
         //cout << "\tfreq: " << FFT.fftFreq << "\tpower: " << FFT.fftPower <<endl;

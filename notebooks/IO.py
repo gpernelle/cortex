@@ -1279,7 +1279,7 @@ class GRAPH():
         filename = column + '.pdf'
         ax1, im = self.plotDiagramChangeCSD(fig, ax1, df, title,
                                             kind, filename, extent=extent, cmap=cmap, both=both,
-                                            vmax=vmax, plast=True)
+                                            vmax=vmax, plast=True, sWII=sWII)
 
         fig.subplots_adjust(right=0.85)
         cbar_ax = fig.add_axes(self.axes11)
