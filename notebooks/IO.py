@@ -240,7 +240,9 @@ class IO(object):
                      csd['f1End'][0], csd['f1End'][1], csd['f2End'][0], csd['f2End'][1],
                      csd['fBothBegin'][0], csd['fBothBegin'][1], csd['fBothEnd'][0], csd['fBothEnd'][1],
                     _gn1, _gn2, _gnshared, _initmean,
+                    _gn1/_initmean, _gn2/_initmean, _gnshared/_initmean,
                     gn1, gn2, gnshared,
+                    gn1 / _initmean, gn2 / _initmean, gnshared / _initmean,
                      key]
 
         # append data file
