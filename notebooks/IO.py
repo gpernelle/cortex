@@ -232,7 +232,7 @@ class IO(object):
         _gn1 = np.mean(matN1[np.nonzero(matN1)])
         _gn2 = np.mean(matN2[np.nonzero(matN2)])
         _gnshared = np.mean(matNshared[np.nonzero(matNshared)])
-        _initmean = np.mean(np.nonzero(mat))
+        _initmean = np.mean(mat[np.nonzero(mat)])
 
         data = [tauv, self.d2, sWII, sG, LTD > 1e-8,
                      csd['maxBegin'], csd['argmaxBegin'], csd['maxEnd'], csd['argmaxEnd'],
