@@ -673,6 +673,64 @@ class GRAPH():
             print('Error reshaping array')
         return ax, image
 
+    def plotDiagramActivity(self, figure, ax, dataframe, title, column, filename, save=False, front=False, gridsize=60,
+                           extent=[0, 7.0, 0, 200], cmap=cx4, bad=False, format=None, vmin=None, vmax=None,
+                           plast=False):
+            '''
+            to check output image orientation
+            -1   1
+
+            -2   2
+            '''
+
+            ax.set_ylim(ymin=extent[2], ymax=extent[3])
+            # Set color transparency (0: transparent; 1: solid)
+            a = 1
+            # Create a colormap
+            customcmap = [(x / 24.0, x / 48.0, 0.05) for x in range(len(dataframe))]
+            dataframe = dataframe.fillna(0)
+            nbVal = len(pd.unique(dataframe.sG.ravel()))
+            da = np.array(dataframe[['tauv', 'sG', column]].sort_values(['tauv', 'sG'], ascending=[1, 0]))
+            z = da[:, 2]
+
+            print(z.shape)
+            try:
+                zr = z.reshape(nbVal, int(len(z) // nbVal)).transpose()
+                print(zr.shape)
+                if bad:
+                    cmap.set_bad('white')
+                    plt.imshow(np.ma.masked_values(zr, 0), cmap=cmap)
+                image = ax.imshow(zr, extent=extent, cmap=cmap, interpolation='nearest', vmin=vmin, vmax=vmax,
+                                  aspect=(extent[1] - extent[0]) / (extent[3] - extent[2]))  # , cmap =cx4)# drawing the function
+                # if format == None:
+                # plt.colorbar(image, format='%.2g', cax=ax)
+                # else:
+                # plt.colorbar(image, format=format)
+                ax.set_title(title, y=1.03)
+                plt.subplots_adjust(top=0.9)
+
+                ax.xaxis.set_label_position('bottom')
+
+                maxX = math.floor(extent[1] * 10) / 10
+                maxY = math.ceil(extent[3] / 10) * 10
+
+                ax.set_xlim([extent[0], maxX])
+                ax.set_yticks([extent[2], (maxY - extent[2]) / 2, maxY])
+                ax.set_xticks([extent[0], (maxX - extent[0]) / 2, maxX])
+                xlab = r'Nb of shared Gap-junctions'
+                ylab = r'Time constant $\tau_{v}$ from N2'
+                ax.set_xlabel(xlab, alpha=a)
+                ax.set_ylabel(ylab, alpha=a)
+                ax.set_xticklabels(ax.get_xticks(), alpha=a)
+                ax.set_yticklabels(ax.get_yticks(), alpha=a)
+
+                if save:
+                    plt.tight_layout()
+                    plt.savefig(DIRECTORY + filename)
+            except:
+                print('Error reshaping array')
+            return ax, image
+
     def plotDiagramChangeCSD(self, figure, ax, dataframe, title, column, filename, save=True, front=False,
                            extent=[0, 7.0, 0, 200], cmap=cx4, bad=False,
                              format=None, vmin=None, vmax=None, both=None, plast=None, sWII=10):
