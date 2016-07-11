@@ -52,6 +52,8 @@ void Simulation::initData() {
     char hostname[1024];
     hostname[1023] = '\0';
     gethostname(hostname,1023);
+    
+    csv_directory = "/Dropbox/utils/csv/";
 
     #ifdef __APPLE__
         if(!strcmp(hostname,"dyn1147-170.insecure.ic.ac.uk") or !strcmp(hostname,"ip-static-94-242-199-231.server.lu") or (1==1) ){
@@ -83,18 +85,9 @@ void Simulation::initData() {
 
     #endif
 
-    //cout << hostname << endl;
-    //cout << "0 if ICL beast:" << strcmp(hostname,"dyn1147-170.insecure.ic.ac.uk")<< endl;
-    //cout << "0 if ICL workstation:" << strcmp(hostname,"CNL-Brain1")<< endl;
     ext = "";
     path = root + computer + directory;
-    //cout << path << endl;
-
-//    root = "/Users/";
-//    computer = "GP1514";
-//    directory = "/Dropbox/ICL-2014/Code/C-Code/cortex/data/";
-    ext = "";
-    path = root + computer + directory;
+    csv_path = root + computer + csv_directory;
 
     TsigI = 70.0; // Variance of current in the inhibitory neurons
     TsigE = 72; // Variance of current in the inhibitory neurons

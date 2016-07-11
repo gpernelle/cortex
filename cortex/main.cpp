@@ -125,6 +125,8 @@ int main(int argc, const char * argv[])
     MovingAverage mvgammaN2(g);
     MovingAverage mvgammaNshared(g);
     Fourier FFT;
+    Fourier FFT1;
+    Fourier FFT2;
     Corr correlation;
     pl(sim1->DEBUG, __LINE__);
     const int N = sim1->N;
@@ -170,6 +172,8 @@ int main(int argc, const char * argv[])
     vector<double> current3;
     vector<double> ssp3;
     vector<double> vm;
+    vector<double> vm1;
+    vector<double> vm2;
     vector<double> voltage;  // for DEBUG
     vector<double> adaptation; // for DEBUG
     vector<double> pm;
@@ -184,8 +188,14 @@ int main(int argc, const char * argv[])
     deque<int>* spikeTimesCor = new deque<int>[N];
     double* noise = new double[N]{0};
     double meanBurst= 0 ;
+    double meanBurst1= 0 ;
+    double meanBurst2= 0 ;
     double meanSpike = 0;
+    double meanSpike1 = 0;
+    double meanSpike2 = 0;
     double meanSpikeNonBurst = 0;
+    double meanSpikeNonBurst1 = 0;
+    double meanSpikeNonBurst2 = 0;
 
     double alpha = dt / (tau_q + dt);
     pl(sim1->DEBUG, __LINE__);
@@ -204,6 +214,8 @@ int main(int argc, const char * argv[])
     mvgammaN2.sim = *sim1;
     mvgammaNshared.sim = *sim1;
     FFT.sim = *sim1;
+    FFT1.sim = *sim1;
+    FFT2.sim = *sim1;
     plast.sim = *sim1;
     correlation.sim = *sim1;
     plast.initData();
@@ -450,11 +462,6 @@ int main(int argc, const char * argv[])
                                                                        + plast.WII * (NbSpikesI - ( v[i] > 25.0))
                                                                        + plast.WEI * NbSpikesE);
                     }
-                    if (synSpikes!=0 or (plast.WII * (NbSpikesI - ( v[i] > 25.0)))!=0) {
-//                        cout << "1:" << synSpikes << endl;
-//                        cout << "2:" << plast.WII * (NbSpikesI - (v[i] > 25.0)) << endl;
-                    }
-
 
                 }
                 if (sim1->RESONANCE) {
@@ -672,12 +679,26 @@ int main(int argc, const char * argv[])
 
         NbSpikesI = NewNbSpikesI;
         NbSpikesE = NewNbSpikesE;
+
         meanBurst += getAvg<double>(p, sim1->NI);
+        meanBurst1 += getAvg<double>(p, int((sim1->NI-sim1->sharedG)/2));
+        meanBurst2 += getAvg<double>(p, int((sim1->NI+sim1->sharedG)/2), sim1->NI);
+
         meanSpikeNonBurst += getAvg<bool>(nonbursting, sim1->NI);
-        meanSpike += NbSpikesI/(sim1->NI*1.0);  // only for inhibitory neurons here
+        meanSpikeNonBurst1 += getAvg<bool>(nonbursting,  \
+		int((sim1->NI-sim1->sharedG)/2));
+        meanSpikeNonBurst2 += getAvg<bool>(nonbursting, \
+		int((sim1->NI+sim1->sharedG)/2), sim1->NI);
+
+        meanSpike += getAvg<bool>(vv, sim1->NI);  // only for inhibitory neurons here
+        meanSpike1 += getAvg<bool>(vv, int((sim1->NI-sim1->sharedG)/2));
+        meanSpike2 += getAvg<bool>(vv, int((sim1->NI+sim1->sharedG)/2), sim1->NI);
+
 
         if (sim1->FOURIER){
             vm.push_back(getAvg<double>(v, sim1->NI+1, sim1->N));
+            vm1.push_back(getAvg<double>(v, 0, int((sim1->NI-sim1->sharedG)/2)));
+            vm2.push_back(getAvg<double>(v, int((sim1->NI+sim1->sharedG)/2), sim1->NI));
         }
         if (sim1->CLUSTER){
             current1.push_back(getAvg<double>(I, sim1->nbInClusters, 0));
@@ -833,6 +854,8 @@ int main(int argc, const char * argv[])
         //cout << "resonance: " <<  abs(res_val) << "\t" << abs(res_val)/T/N/dt << endl;
         if (sim1->FOURIER) {
             util.writedata("vm", vm);
+            util.writedata("vm1", vm1);
+            util.writedata("vm2", vm2);
 //            util.writedata("freq", FFT.freq);
 //            util.writedata("amp", FFT.amp);
         }
@@ -866,21 +889,25 @@ int main(int argc, const char * argv[])
             // compute FFT on Local Field Potential
             //
             FFT.computeFFT(vm);
+            FFT1.computeFFT(vm1);
+            FFT2.computeFFT(vm2);
         }
         
         double resultCorr = correlation.computeCorrelation(spikeTimesCor, dt);
-        string path_csv =  sim1->root+sim1->computer+sim1->directory+namecsv+".csv";
+        string path_csv =  sim1->csv_path + namecsv + ".csv";
         ofstream csvFile(path_csv, std::ofstream::out | std::ofstream::app);
         // ACTIVITY DIAG
-        csvFile << plast.Vgap*sim1->NI << ";" << sim1->TImean << ";" << resultCorr << ";" << meanSpike/T << ";" << meanSpikeNonBurst/T << ";" << meanBurst/T <<";"<< FFT.fftFreq<<";"<< FFT.fftPower<< endl;
+        //csvFile << plast.Vgap*sim1->NI << ";" << sim1->TImean << ";" << resultCorr << ";" << meanSpike/T << ";" << meanSpikeNonBurst/T << ";" << meanBurst/T <<";"<< FFT.fftFreq<<";"<< FFT.fftPower<< endl;
         // ACTIVITY FOR SUBNETs
         csvFile << plast.Vgap*sim1->NI << ";" << sim1->TImean << ";" \
-            << resultCorr << ";" << meanSpike/T << ";" << meanSpikeNonBurst/T \
-            << ";" << meanBurst/T <<";"<< FFT.fftFreq<<";"<< FFT.fftPower\
-            << ";" << sim1->sharedG << ";" << sim1->sharedWII<< ";" << sim1->tauv << endl;
-        //cout << "Data written: " << plast.Vgap*N << " " << sim1->TImean << "\tCorr:" << resultCorr ;
-        //cout << "\tSp:\t" << meanSpike/T << "\tB:\t" << meanBurst/T;
-        //cout << "\tfreq: " << FFT.fftFreq << "\tpower: " << FFT.fftPower <<endl;
+            	<< resultCorr \
+            	<< ";" << meanBurst/T  << ";" << meanSpike/T << ";" << meanSpikeNonBurst/T \
+            	<< ";" << meanBurst1/T  << ";" << meanSpike1/T << ";" << meanSpikeNonBurst1/T \
+            	<< ";" << meanBurst2/T  << ";" << meanSpike2/T << ";" << meanSpikeNonBurst2/T \
+		<< ";" << FFT.fftFreq <<";" << FFT.fftPower\
+            	<< ";" << FFT1.fftFreq <<";" << FFT1.fftPower\
+            	<< ";" << FFT2.fftFreq <<";" << FFT2.fftPower\
+            	<< ";" << sim1->sharedG << ";" << sim1->sharedWII << ";" << sim1->tauv << endl;
     }
     if (sim1->RESONANCE) {
         string path_csv =  sim1->root+sim1->computer+sim1->directory+"resonance.csv";

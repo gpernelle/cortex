@@ -51,8 +51,10 @@ public:
     std::string root;
     std::string computer;
     std::string directory;
+    std::string csv_directory;
     std::string ext;
     std::string path;
+    std::string csv_path;
     std::string model;
 
     double TsigI;
