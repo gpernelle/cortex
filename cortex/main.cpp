@@ -895,6 +895,7 @@ int main(int argc, const char * argv[])
         
         double resultCorr = correlation.computeCorrelation(spikeTimesCor, dt);
         string path_csv =  sim1->csv_path + namecsv + ".csv";
+	//cout << path_csv << endl;
         ofstream csvFile(path_csv, std::ofstream::out | std::ofstream::app);
         // ACTIVITY DIAG
         //csvFile << plast.Vgap*sim1->NI << ";" << sim1->TImean << ";" << resultCorr << ";" << meanSpike/T << ";" << meanSpikeNonBurst/T << ";" << meanBurst/T <<";"<< FFT.fftFreq<<";"<< FFT.fftPower<< endl;

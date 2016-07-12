@@ -53,7 +53,7 @@ void Simulation::initData() {
     hostname[1023] = '\0';
     gethostname(hostname,1023);
     
-    csv_directory = "/Dropbox/utils/csv/";
+    csv_directory = "/Dropbox/0000_PhD/csv/";
 
     #ifdef __APPLE__
         if(!strcmp(hostname,"dyn1147-170.insecure.ic.ac.uk") or !strcmp(hostname,"ip-static-94-242-199-231.server.lu") or (1==1) ){
