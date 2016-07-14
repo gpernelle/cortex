@@ -1,4 +1,4 @@
-from utils import *
+from functionsTF import *
 
 def movingaverage(values,window):
     weigths = np.repeat(1.0, window)/window
@@ -94,3 +94,59 @@ def svg2eps(filename, path = '/Users/GP1514/Dropbox/0000_PhD/figures/20160704/')
     subprocess.check_output(["inkscape", '%s%s.svg'%(path, filename),
                             '-E', '%s%s.eps'%(path,filename), '--without-gui',
                              '--export-ignore-filters','--export-ps-level=3'])
+
+
+def vmin_vmax(df, kind="burst", v=0):
+    data = pd.melt(df, id_vars=['tauv', 'sG'], value_vars=[kind + '1', kind + '2'])
+    #     print(data.head())
+    if v >= 0:
+        vmin, vmax = np.percentile(data['value'], v), np.percentile(data['value'], 100)
+    else:
+        vmin = None
+        vmax = None
+    # print(vmin, vmax)
+    return vmin, vmax
+
+
+def facet_heatmap(data, df=None, v=0, vmin=None, vmax=None, **kws):
+    kind = data['variable'].get_values()[0][:-1]
+    if vmin == None:
+        vmin, _ = vmin_vmax(df, kind=kind, v=v)
+    if vmax == None:
+        _, vmax = vmin_vmax(df, kind=kind, v=v)
+    data = data.pivot(index='tauv', columns='sG', values='value')
+    im = sns.heatmap(data, yticklabels=10, xticklabels=10, vmin=vmin, vmax=vmax, **kws)  # <-- Pass kwargs to heatmap
+    im.invert_yaxis()
+
+
+def plotGridHeatmap(df, col_wrap=2, cols=['burst1', 'spike1', 'burst2', 'spike2'], v=-1, vmin=None, vmax=None, **kws):
+    data = pd.melt(df, id_vars=['tauv', 'sG'], value_vars=cols)
+
+    #     print(data.head())
+    with sns.plotting_context(font_scale=5.5):
+        g = sns.FacetGrid(data, col="variable", col_wrap=col_wrap, size=3, aspect=1)
+
+    cbar_ax = g.fig.add_axes([.92, .3, .02, .4])  # <-- Create a colorbar axes
+    g = g.map_dataframe(facet_heatmap, v=v, df=df, vmin=vmin, vmax=vmax,
+                        cbar_ax=cbar_ax, **kws)  # <-- Specify the colorbar axes and limits
+    g.set_titles(col_template="{col_name}", fontweight='bold', fontsize=18)
+    g.fig.subplots_adjust(right=.9)  # <-- Add space so the colorbar doesn't overlap the plot
+    return g
+
+pd.options.mode.chained_assignment = None
+def plotHeatmap(df, col, title='', cmap=None):
+    plt.figure()
+    '''
+    plot heatmap using seaborn library
+    '''
+    burst = df[['tauv', 'sG', col]]
+    burst.loc[:,('tauv')] = burst['tauv'].astype(int)
+    burst.loc[:,('sG')] = burst['sG'].astype(int)
+    c = burst.pivot('tauv','sG', col)
+    im = sns.heatmap(c, yticklabels=5, xticklabels=2, cmap=cmap)
+    im.invert_yaxis()
+    sns.set_style("whitegrid")
+    if not title:
+        title=col
+    plt.title(title)
+    return 0

@@ -20,7 +20,7 @@ from matplotlib.mlab import psd
 from scipy.misc import comb
 from scipy import sparse, signal
 import svgutils.transform as sg
-
+import seaborn as sns
 
 cx4 = cubehelix.cmap(reverse=False, start=0., rot=0.5)
 from joblib import Parallel, delayed  
@@ -42,3 +42,12 @@ todayStr = '%04d%02d%02d' % (today.year, today.month, today.day)
 DIRECTORY = os.path.expanduser("~/Dropbox/0000_PhD/figures/"+todayStr+"/")
 if not os.path.exists(DIRECTORY):
     os.makedirs(DIRECTORY)
+
+import warnings
+
+def fxn():
+    warnings.warn("deprecated", DeprecationWarning)
+
+with warnings.catch_warnings():
+    warnings.simplefilter("ignore")
+    fxn()
