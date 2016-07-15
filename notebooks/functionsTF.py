@@ -12,18 +12,19 @@ FLAGS = flags.FLAGS
 flags.DEFINE_string('summaries_dir', '/tmp/tensorflow_logs', 'Summaries directory')
 flags.DEFINE_string('data_dir', '/tmp/data', 'Directory for storing data')
 
-DEVICE = '/gpu:0'
+# DEVICE = '/gpu:0'
 sess = tf.InteractiveSession()
 
 class Tfnet:
     
-    def __init__(self, N=400, T=400, disp=False, spikeMonitor=False, input=None, tauv=15, sG=10):
+    def __init__(self, N=400, T=400, disp=False, spikeMonitor=False, input=None, tauv=15, sG=10, device='/gpu:0'):
         self.N = N
         self.T = T
         self.disp = disp
         self.spikeMonitor = spikeMonitor
         self.tauv = tauv
         self.sG = sG
+        self.device = device
         if input is None:
             self.input = np.ones((T,1), dtype='int32')
     
@@ -60,7 +61,7 @@ class Tfnet:
         #################################################################################
         N = self.N
         T = self.T
-        with tf.device(DEVICE):
+        with tf.device(self.device):
             dt = tf.placeholder(tf.float32, shape=(), name='dt')
             tauv = tf.placeholder(tf.float32, shape=(), name='tauv')
             sim_index = tf.placeholder(tf.int32, shape=(), name='sim_index')
@@ -131,7 +132,7 @@ class Tfnet:
         #################################################################################
         ## Computation
         #################################################################################
-        with tf.device(DEVICE):
+        with tf.device(self.device):
             with tf.name_scope('Currents'):
                 # Discretized PDE update rules
                 iChem_ = iChem + dt / 5 * (-iChem + tf.matmul(WII, tf.to_float(vv)))
