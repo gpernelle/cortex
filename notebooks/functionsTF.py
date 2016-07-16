@@ -17,7 +17,7 @@ sess = tf.InteractiveSession()
 
 class Tfnet:
     
-    def __init__(self, N=400, T=400, disp=False, spikeMonitor=False, input=None, tauv=15, sG=10, device='/gpu:0'):
+    def __init__(self, N=400, T=400, disp=False, spikeMonitor=False, input=None, tauv=15, sG=10, device='/gpu:0', both=False):
         self.N = N
         self.T = T
         self.disp = disp
@@ -25,6 +25,7 @@ class Tfnet:
         self.tauv = tauv
         self.sG = sG
         self.device = device
+        self.both = both
         if input is None:
             self.input = np.ones((T,1), dtype='int32')
     
@@ -129,6 +130,8 @@ class Tfnet:
     
             self.spikes = self.init_float([T, N], "spikes")
 
+            subnet = tf.concat(0, tf.ones([N//2, 1]), tf.zeros([N-N//2,1]))
+
         #################################################################################
         ## Computation
         #################################################################################
@@ -142,7 +145,16 @@ class Tfnet:
                                                                      seed=None, name=None))
                 # iEff_ = iBack_ * scaling + tf.select(tf.greater(tf.ones([N, 1]) * t, 300), TImean_simul, TImean_init)
                 input_ = tf.gather(input, sim_index)
-                iEff_ = iBack_ * scaling + tf.select(tf.greater(tf.ones([N, 1]) * input_, 0), TImean_simul*2, TImean_init)
+
+                # if self.both:
+                #     # input to both subnet
+                #     iEff_ = iBack_ * scaling + tf.select(tf.greater(tf.ones([N, 1]) * input_, 0), TImean_simul*2, TImean_init)
+                # else:
+                #     # input to both subnet
+
+                iEff_ = iBack_ * scaling + tf.select(tf.greater(subnet * input_, 0), TImean_simul * 2,
+                                                         TImean_init)
+
                 iGap_ = tf.matmul(wGap, v) - tf.mul(tf.reshape(tf.reduce_sum(wGap, 0), (N, 1)), v)
     
                 I_ = iGap_ + iChem_ + iEff_
