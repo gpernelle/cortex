@@ -12,10 +12,10 @@ FLAGS = flags.FLAGS
 flags.DEFINE_string('summaries_dir', '/tmp/tensorflow_logs', 'Summaries directory')
 flags.DEFINE_string('data_dir', '/tmp/data', 'Directory for storing data')
 
-# DEVICE = '/gpu:0'
-sess = tf.InteractiveSession()
 
 class Tfnet:
+    # DEVICE = '/gpu:0'
+
     
     def __init__(self, N=400, T=400, disp=False, spikeMonitor=False, input=None, tauv=15, sG=10, device='/gpu:0', both=False):
         self.N = N
@@ -26,6 +26,7 @@ class Tfnet:
         self.sG = sG
         self.device = device
         self.both = both
+        self.sess = tf.InteractiveSession()
         if input is None:
             self.input = np.ones((T,1), dtype='int32')
     
@@ -34,7 +35,7 @@ class Tfnet:
         a = (a - rng[0])/float(rng[1] - rng[0])*255
         a = np.uint8(np.clip(a, 0, 255))
         f = BytesIO()
-        PIL.Image.fromarray(np.uint8(plt.cm.RdBu(a)*255)).save(f, fmt)
+        PIL.Image.fromarray(np.uint8(plt.cm.YlGnBu_r(a)*255)).save(f, fmt)
         display(Image(data=f.getvalue()))
     
     def init_float(self, shape, name):
@@ -81,6 +82,8 @@ class Tfnet:
             vmean = tf.Variable(0, dtype='float32')
             umean = tf.Variable(0, dtype='float32')
             vvmean = tf.Variable(0, dtype='float32')
+            vvmeanN1 = tf.Variable(0, dtype='float32')
+            vvmeanN2 = tf.Variable(0, dtype='float32')
             imean = tf.Variable(0, dtype='float32')
             gammamean = tf.Variable(0, dtype='float32')
     
@@ -123,14 +126,22 @@ class Tfnet:
             ratio = 15
             A_LTD = 1e-0 * 4.7e-6 * FACT * N
             A_LTP = ratio * A_LTD
-    
+
+            # low constant noise
+            TImean_init = tf.ones([N, 1]) * 30
+
+            # stimulation
             TImean = 130.0
             TImean_simul = tf.ones([N, 1], dtype='float32') * TImean
-            TImean_init = tf.concat(0, [tf.ones([int(N / 2), 1]), tf.zeros([N - int(N / 2), 1])]) * TImean
+
+
+            # TImean_init = tf.concat(0, [tf.ones([int(N / 2), 1])*30, tf.zeros([N - int(N / 2), 1])]) * TImean
     
             self.spikes = self.init_float([T, N], "spikes")
 
-            subnet = tf.concat(0, tf.ones([N//2, 1]), tf.zeros([N-N//2,1]))
+            subnet = tf.concat(0, [tf.ones([N//2, 1]), tf.zeros([N-N//2,1])])
+            subnetout = tf.concat(0, [tf.zeros([N//2, 1]), tf.ones([N-N//2,1])])
+            tauvSubnet = subnet * 15 + subnetout * self.tauv
 
         #################################################################################
         ## Computation
@@ -146,14 +157,12 @@ class Tfnet:
                 # iEff_ = iBack_ * scaling + tf.select(tf.greater(tf.ones([N, 1]) * t, 300), TImean_simul, TImean_init)
                 input_ = tf.gather(input, sim_index)
 
-                # if self.both:
-                #     # input to both subnet
-                #     iEff_ = iBack_ * scaling + tf.select(tf.greater(tf.ones([N, 1]) * input_, 0), TImean_simul*2, TImean_init)
-                # else:
-                #     # input to both subnet
-
-                iEff_ = iBack_ * scaling + tf.select(tf.greater(subnet * input_, 0), TImean_simul * 2,
-                                                         TImean_init)
+                if self.both:
+                    # input to both subnet
+                    iEff_ = iBack_ * scaling + tf.select(tf.greater(tf.ones([N, 1]) * input_, 0), TImean_simul*2, TImean_init)
+                else:
+                    # input to both subnet
+                    iEff_ = iBack_ * scaling + tf.select(tf.greater(subnet * input_, 0), TImean_simul * 2, TImean_init)
 
                 iGap_ = tf.matmul(wGap, v) - tf.mul(tf.reshape(tf.reduce_sum(wGap, 0), (N, 1)), v)
     
@@ -163,11 +172,13 @@ class Tfnet:
             with tf.name_scope('Izhikevich'):
                 ind_ = ind + 1
                 # voltage
-                v_ = v + dt / tauv * (tf.mul((v + 60), (v + 50)) - 20 * u + 8 * I_)
+                v_ = v + dt / tauvSubnet * (tf.mul((v + 60), (v + 50)) - 20 * u + 8 * I_)
                 # adaptation
                 u_ = u + dt * 0.044 * (v_ + 55 - u)
                 # spikes
                 vv_ = tf.to_float(tf.greater(v_, 25.0))
+                vvN1_ = tf.to_float(tf.greater(v_*subnet, 25.0))
+                vvN2_ = tf.to_float(tf.greater(v_*subnetout, 25.0))
                 # reset
                 v_ = tf.mul(vv_, -40.0) + tf.mul((1 - vv_), v_)
                 u_ = u_ + tf.mul(vv_, (50.0))
@@ -196,6 +207,8 @@ class Tfnet:
                 umean_ = tf.reduce_mean(u_)
                 imean_ = tf.reduce_mean(I_)
                 vvmean_ = tf.reduce_sum(tf.to_float(vv_))
+                vvmeanN1_ = tf.reduce_sum(tf.to_float(vvN1_))
+                vvmeanN2_ = tf.reduce_sum(tf.to_float(vvN2_))
                 gammamean_ = tf.reduce_mean(wGap_)
     
             with tf.name_scope('Raster_Plot'):
@@ -214,6 +227,8 @@ class Tfnet:
                 umean.assign(umean_),
                 imean.assign(imean_),
                 vvmean.assign(vvmean_),
+                vvmeanN1.assign(vvmeanN1_),
+                vvmeanN2.assign(vvmeanN2_),
                 #         gammamean.assign(gammamean_),
             )
     
@@ -232,23 +247,27 @@ class Tfnet:
         # train_writer = tf.train.SummaryWriter(FLAGS.summaries_dir + '/train', sess.graph)
     
         # sess = tf.Session()
-        sess.run(tf.initialize_all_variables())
+        self.sess.run(tf.initialize_all_variables())
         # with sess.as_default():
         if 1:
             self.vm = []
             self.um = []
             self.vvm = []
+            self.vvmN1 = []
+            self.vvmN2 = []
             self.im = []
             self.gamma = []
             self.iEff = []
             t0 = time.time()
             for i in range(T):
                 # Step simulation
-                sess.run([step], feed_dict={dt: 0.25, tauv: self.tauv, sim_index: i})
+                self.sess.run([step], feed_dict={dt: 0.25, tauv: self.tauv, sim_index: i})
                 if self.spikeMonitor:
                     feed = {dt: 0.25, tauv: 15, sim_index: i}
-                    sess.run(spike_update, feed_dict=feed)
+                    self.sess.run(spike_update, feed_dict=feed)
                 self.vvm.append(vvmean.eval())
+                self.vvmN1.append(vvmeanN1.eval())
+                self.vvmN2.append(vvmeanN2.eval())
                 # Visualize every 50 steps
                 if i % 10 == 0:
                     pass
@@ -256,7 +275,7 @@ class Tfnet:
                     #             train_writer.add_summary(summary, i)
                     if self.disp:
                         clear_output(wait=True)
-                        self.DisplayArray(wGap.eval(), rng=[0, 2 * g0])
+                        self.DisplayArray(wGap.eval(), rng=[0, 1.5 * g0])
                     self.vm.append(vmean.eval())
                     self.um.append(umean.eval())
                     self.im.append(imean.eval())
@@ -268,4 +287,4 @@ class Tfnet:
         #             train_writer.add_run_metadata(run_metadata, 'step%03d' % i)
     
         print('%.2f' % (time.time() - t0))
-        # sess.close()
+        self.sess.close()
