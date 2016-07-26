@@ -121,7 +121,6 @@ def facet_heatmap(data, df=None, v=0, vmin=None, vmax=None, **kws):
 
 def plotGridHeatmap(df, col_wrap=2, cols=['burst1', 'spike1', 'burst2', 'spike2'], v=-1, vmin=None, vmax=None, **kws):
     data = pd.melt(df, id_vars=['tauv', 'sG'], value_vars=cols)
-
     #     print(data.head())
     with sns.plotting_context(font_scale=5.5):
         g = sns.FacetGrid(data, col="variable", col_wrap=col_wrap, size=3, aspect=1)
@@ -134,19 +133,58 @@ def plotGridHeatmap(df, col_wrap=2, cols=['burst1', 'spike1', 'burst2', 'spike2'
     return g
 
 pd.options.mode.chained_assignment = None
-def plotHeatmap(df, col, title='', cmap=None):
+def plotHeatmap(df, col="cor1", title='', cmap=None, **kws):
     plt.figure()
     '''
     plot heatmap using seaborn library
     '''
     burst = df[['tauv', 'sG', col]]
+    burst.loc[:, (col)] = burst[col].astype(float)
     burst.loc[:,('tauv')] = burst['tauv'].astype(int)
     burst.loc[:,('sG')] = burst['sG'].astype(int)
     c = burst.pivot('tauv','sG', col)
-    im = sns.heatmap(c, yticklabels=5, xticklabels=2, cmap=cmap)
+
+
+    im = sns.heatmap(c, yticklabels=5, xticklabels=2, cmap=cmap, **kws)
     im.invert_yaxis()
     sns.set_style("whitegrid")
     if not title:
         title=col
     plt.title(title)
     return 0
+
+def generateInput(seed, T):
+    dt = 0.00025
+    np.random.seed(seed)
+    x = np.linspace(0.0, dt*T, T)
+    y = np.zeros(len(x))
+    for i in range(5,100,5):
+        y += np.random.rand()*np.sin(i * 2.0*np.pi*x)
+    return y/np.max(y)
+
+def plotFFT(y, T):
+    dt = 0.00025
+    yf = fft(y)
+    xf = np.linspace(0.0, 1.0/(2.0*dt), T/2)
+    plt.figure()
+    plt.plot(xf, 2.0/dt * np.abs(yf[0:T/2]))
+    plt.xlim([0,150])
+
+
+def facet_heatmap(data, col='cor1', cols=['cor1', 'cor2', 'corChange'], **kws):
+    #     data = pd.melt(df, id_vars=['tauv', 'sG'], value_vars=cols)
+    data = data[data['variable'] == col]
+    data = data.pivot(index='tauv', columns='sG', values='value')
+    im = sns.heatmap(data, annot=True, **kws)
+    im.invert_yaxis()
+
+
+def plotGrid(df, col, title='', cols=['cor1', 'cor2', 'corChange'], **kws):
+    data = pd.melt(df, id_vars=['tauv', 'sG', 'T', 'both'], value_vars=cols)
+
+    with sns.plotting_context(font_scale=5.5):
+        g = sns.FacetGrid(data, col="both", row="T")
+    g = g.map_dataframe(facet_heatmap, col=col, cols=cols, **kws)
+    plt.subplots_adjust(top=0.9)
+    g.fig.suptitle(title, fontsize='16')
+    g.savefig(DIRECTORY + 'cor-plot_%s.png' % col)

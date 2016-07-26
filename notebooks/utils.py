@@ -12,6 +12,7 @@ import pandas as pd
 import pylab as plt
 import ipyparallel as ipp
 import re, csv, os, datetime, os, sys, cubehelix, multiprocessing, sh, subprocess, math, socket
+from scipy.fftpack import fft
 from matplotlib import gridspec
 from matplotlib.pyplot import cm
 import matplotlib.colors as colors
@@ -21,6 +22,7 @@ from scipy.misc import comb
 from scipy import sparse, signal
 import svgutils.transform as sg
 import seaborn as sns
+import json
 
 cx4 = cubehelix.cmap(reverse=False, start=0., rot=0.5)
 from joblib import Parallel, delayed  

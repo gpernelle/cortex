@@ -29,6 +29,10 @@ class Tfnet:
         self.sess = tf.InteractiveSession()
         if input is None:
             self.input = np.ones((T,1), dtype='int32')
+
+    def to_JSON(self):
+        return json.dumps(self, default=lambda o: o.__dict__,
+                          sort_keys=True, indent=4)
     
     def DisplayArray(self, a, fmt='jpeg', rng=[0,1]):
         """Display an array as a picture."""
@@ -269,7 +273,7 @@ class Tfnet:
                 self.vvmN1.append(vvmeanN1.eval())
                 self.vvmN2.append(vvmeanN2.eval())
                 # Visualize every 50 steps
-                if i % 10 == 0:
+                if i % 1 == 0:
                     pass
                     #             summary = sess.run(merged, feed_dict={dt: dtVal, tauv: 15})
                     #             train_writer.add_summary(summary, i)
