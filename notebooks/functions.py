@@ -153,12 +153,12 @@ def plotHeatmap(df, col="cor1", title='', cmap=None, **kws):
     plt.title(title)
     return 0
 
-def generateInput(seed, T):
+def generateInput(seed, T, n=5):
     dt = 0.00025
     np.random.seed(seed)
     x = np.linspace(0.0, dt*T, T)
     y = np.zeros(len(x))
-    for i in range(5,100,5):
+    for i in range(5,100,n):
         y += np.random.rand()*np.sin(i * 2.0*np.pi*x)
     return y/np.max(y)
 
