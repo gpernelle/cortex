@@ -26,6 +26,7 @@ public:
     bool localWII;
     bool MIN_PLAST_THRESH;
     bool GLOB;
+    bool BOTH; // input to both subnetworks
     bool CORRELATION;
     bool FOURIER;
     bool SPIKES;
@@ -112,7 +113,7 @@ public:
         if (sim.LTD) sstm << "_LTD-" << sim.LTD;
         if (sim.LTP) sstm << "_LTP-" << sim.LTP;
         sstm << "_model-"<< sim.model;
-        sstm << "_sG-"<< sim.sharedG << "_sWII-" << sim.sharedWII << "_tauv-" << sim.tauv ;
+        sstm << "_sG-"<< sim.sharedG << "_sWII-" << sim.sharedWII << "_tauv-" << sim.tauv << "_both-" << sim.BOTH*1;
 
         //    //test if path exists
         //    fileExists(sim.path.c_str());
@@ -136,7 +137,7 @@ public:
         if (sim.LTD) sstm << "_LTD-" << sim.LTD;
         if (sim.LTP) sstm << "_LTP-" << sim.LTP;
         sstm << "_model-"<< sim.model;
-        sstm << "_sG-"<< sim.sharedG << "_sWII-" << sim.sharedWII << "_tauv-" << sim.tauv ;
+        sstm << "_sG-"<< sim.sharedG << "_sWII-" << sim.sharedWII << "_tauv-" << sim.tauv << "_both-" << sim.BOTH*1 ;
 
 
         //    //test if path exists

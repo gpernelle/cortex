@@ -37,23 +37,25 @@ def readDataFile(path):
 
 
 @autojit
-def resonanceFS(F, tauv=15):
+def resonanceFS(tauv=15):
+    '''
+    Compute the resonance of the Izh model for FS neurons
+    :param tauv:
+    :return:
+    '''
+    print("resonance %d"%tauv)
     T = 2000
     dt = 1
     t = np.arange(0, T, dt)
     F = np.logspace(0.5, 2.3, 200)
 
-    res_var = np.empty(len(F), dtype=np.float64)
-    b = 2
+    res_var = np.empty(len(F), dtype=np.float32)
     for k, f in enumerate(F):
         A = 0.01
         I = A * np.cos(2 * np.pi * f * t / 1000)
         res_v = []
-        res_u = []
         u = 0
-        t_rest = 0
-
-        # izh neuron model for cortical fast spiking neurons (that burst)
+        # izh neuron model for cortical fast spiking neurons (that bursts)
         v = -60
         for i in range(len(t)):
             v += dt / tauv * ((v + 60) * (v + 50) - 20 * u + 8 * I[i])
@@ -63,9 +65,7 @@ def resonanceFS(F, tauv=15):
                 u += 50
             if i * dt > 1500:
                 res_v.append(v / A)
-
         var = np.var(res_v)
-        #         var = np.max(res_v)-np.min(res_v)
         res_var[k] = var
     return res_var
 
@@ -153,12 +153,12 @@ def plotHeatmap(df, col="cor1", title='', cmap=None, **kws):
     plt.title(title)
     return 0
 
-def generateInput(seed, T, n=5):
+def generateInput(seed, T, n=30):
     dt = 0.00025
     np.random.seed(seed)
     x = np.linspace(0.0, dt*T, T)
     y = np.zeros(len(x))
-    for i in range(5,100,n):
+    for i in range(5,300,n):
         y += np.random.rand()*np.sin(i * 2.0*np.pi*x)
     return y/np.max(y)
 
@@ -168,7 +168,7 @@ def plotFFT(y, T):
     xf = np.linspace(0.0, 1.0/(2.0*dt), T/2)
     plt.figure()
     plt.plot(xf, 2.0/dt * np.abs(yf[0:T/2]))
-    plt.xlim([0,150])
+    plt.xlim([0,300])
 
 
 def facet_heatmap(data, col='cor1', cols=['cor1', 'cor2', 'corChange'], **kws):

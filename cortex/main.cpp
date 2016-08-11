@@ -90,6 +90,8 @@ int main(int argc, const char * argv[])
                 th_q = atof(argv[i + 1]);
             } else if (!strcmp(argv[i], "-plast")) {
                 sim1->COMPUTE_PLAST = (1==atoi(argv[i + 1])) ;
+            } else if (!strcmp(argv[i], "-both")) {
+                sim1->BOTH = (1==atoi(argv[i + 1])) ;
             } else if (!strcmp(argv[i], "-LTP")) {
                 LTP = atof(argv[i + 1]);
             } else if (!strcmp(argv[i], "-LTD")) {
@@ -425,7 +427,7 @@ int main(int argc, const char * argv[])
                 noise[i] = dist(e2);
                 Iback[i] = Iback[i] + dt/(sim1->tau_I*1.0) * (-Iback[i] + noise[i]);
 //                Ieff[i] = Iback[i] / sqrt(1/(2*(sim1->tau_I/dt))) * sim1->TsigI + sim1->TImean;
-                Ieff[i] = Iback[i] / sqrt(1/(2*(sim1->tau_I/dt))) * sim1->TsigI + sim1->TImean*((i>sim1->nbInClusters)*(t>300) + (i<=sim1->nbInClusters) );
+                Ieff[i] = Iback[i] / sqrt(1/(2*(sim1->tau_I/dt))) * sim1->TsigI + sim1->TImean*((i>sim1->nbInClusters)*(t>300)*(sim1->BOTH) + (i<=sim1->nbInClusters) );
 
 
                 // sum

@@ -34,13 +34,14 @@ class Tfnet:
         return json.dumps(self, default=lambda o: o.__dict__,
                           sort_keys=True, indent=4)
     
-    def DisplayArray(self, a, fmt='jpeg', rng=[0,1]):
+    def DisplayArray(self, a, fmt='jpeg', rng=[0,1], text=""):
         """Display an array as a picture."""
         a = (a - rng[0])/float(rng[1] - rng[0])*255
         a = np.uint8(np.clip(a, 0, 255))
         f = BytesIO()
         PIL.Image.fromarray(np.uint8(plt.cm.YlGnBu_r(a)*255)).save(f, fmt)
         display(Image(data=f.getvalue()))
+        print(text)
     
     def init_float(self, shape, name):
     #     return tf.Variable(tf.random_normal(shape, stddev=0.01), name=name)
@@ -120,7 +121,7 @@ class Tfnet:
 
     
             g0 = 7 / nbOfGaps ** 0.5
-            wGap_init = np.ones([N, N], dtype=np.float32) * g0
+            wGap_init = (np.random.random_sample([N, N]).astype(np.float32)*(1-0.001)+0.001) * g0
             wII_init = np.ones([N, N], dtype=np.float32) * 500 / N / 0.25
     
             wGap = tf.Variable(wGap_init * conn)
@@ -202,9 +203,9 @@ class Tfnet:
                 B = tf.matmul(vv_, tf.ones([1, N]))
                 dwLTP_ = A_LTP * (tf.mul(tf.ones([N, N]) - 1 / g0 * wGap, B + tf.transpose(B)))
                 # dwLTD_ = A_LTD * p
-                dwGap_ = dt * (dwLTP_ - dwLTD_)
+                dwGap_ = dt * (dwLTP_ - dwLTD_) * tf.cast((sim_index>4000), tf.float32)
                 wGap_ = tf.mul(tf.clip_by_value(wGap + dwGap_, clip_value_min=0, clip_value_max=10 ** 10), allowedConnections)
-    
+
             # monitoring
             with tf.name_scope('Monitoring'):
                 vmean_ = tf.reduce_mean(v_)
@@ -273,13 +274,13 @@ class Tfnet:
                 self.vvmN1.append(vvmeanN1.eval())
                 self.vvmN2.append(vvmeanN2.eval())
                 # Visualize every 50 steps
-                if i % 1 == 0:
+                if i % 40 == 0:
                     pass
                     #             summary = sess.run(merged, feed_dict={dt: dtVal, tauv: 15})
                     #             train_writer.add_summary(summary, i)
                     if self.disp:
                         clear_output(wait=True)
-                        self.DisplayArray(wGap.eval(), rng=[0, 1.5 * g0])
+                        self.DisplayArray(wGap.eval(), rng=[0, 1.5 * g0], text="%.2f ms" % (i*0.25))
                     self.vm.append(vmean.eval())
                     self.um.append(umean.eval())
                     self.im.append(imean.eval())
@@ -292,3 +293,4 @@ class Tfnet:
     
         print('%.2f' % (time.time() - t0))
         self.sess.close()
+        del self.sess

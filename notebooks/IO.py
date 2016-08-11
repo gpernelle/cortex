@@ -28,6 +28,7 @@ class IO(object):
         self.d1 = 100
         self.d2 = 1000
         self.d3 = 100
+        self.BOTH = True
         self.WII = 1400
         self.FACT = 1
         self.ratio = 15
@@ -101,7 +102,8 @@ class IO(object):
                       '-S', str(self.S), '-G', str(self.g), '-s', str(self.sigma),
                       '-WII', str(self.WII), '-LTP', str(self.LTP), '-LTD', str(self.LTD),
                       '-model', self.model, '-r', str(self.r), '-global', str(self.glob),
-                      '-sG', str(self.sG), '-sWII', str(self.sWII), '-tauv', str(tauv), '-plast', str(self.plast)]
+                      '-sG', str(self.sG), '-sWII', str(self.sWII), '-tauv', str(tauv),
+                      '-plast', str(self.plast), '-both', str(self.BOTH)]
         print(' '.join(commandStr))
         subprocess.check_output(commandStr)
 
@@ -269,9 +271,10 @@ class IO(object):
         TImean = 30
         ext = "_%d.txt" % i
         # compute the paths of data files.
-        extension = "_g-%.6g_TImean-%d_T-%d_Glob-%d_dt-%.2g_N-%d_r-%.2g_S-%d_WII-%d_LTD-%.6g_LTP-%.6g_model-%s_sG-%d_sWII-%d_tauv-%d" \
-                    % (self.g, TImean, T, self.glob, self.dt, self.N, self.r, self.S, self.WII, self.LTD, self.LTP, self.model,
-                       self.sG, self.sWII, self.tauv)
+        extension = "_g-%.6g_TImean-%d_T-%d_Glob-%d_dt-%.2g_N-%d_r-%.2g_S-%d_WII-%d_LTD-%.6g_LTP-%.6g_model-%s_sG-%d_sWII-%d_tauv-%d_both-%d" \
+                    % (self.g, TImean, T, self.glob, self.dt, self.N, self.r, self.S,
+                       self.WII, self.LTD, self.LTP, self.model,
+                       self.sG, self.sWII, self.tauv, self.BOTH)
         extension += ext
 
         path_x = DIRECTORY + "spike_x" + extension
@@ -1040,23 +1043,25 @@ class GRAPH():
         matplotlib.rc('axes', labelsize=fontsize)
         matplotlib.rc('axes', titlesize=fontsize)
 
+        # --------------------------------------------------------------------------------
+        # plot gamma
+        # --------------------------------------------------------------------------------
         ax0 = fig.add_subplot(421)
         ax0.plot(xax(c.gamma, c.T), c.gamma, color='g')
         ax0.plot(xax(c.gammaN1, c.T), c.gammaN1*(1+0.0*c.sG), color='r')
         ax0.plot(xax(c.gammaN2, c.T), c.gammaN2*(1+0.0*c.sG), color='c')
         ax0.set_title('Mean gap junction coupling')
 
+        # --------------------------------------------------------------------------------
+        # plot subthreshold resonance
+        # --------------------------------------------------------------------------------
         ax01 = fig.add_subplot(422)
-        T = 2000
-        dt = 1
-        t = np.arange(0, T, dt)
         F = np.logspace(0.5, 2.3, 200)
-        mod = resonanceFS(F, tauv=tauv)
-        mod15 = resonanceFS(F, tauv=15)
+        mod = resonanceFS(tauv=tauv)
+        mod15 = resonanceFS(tauv=15)
         ax01.semilogx(F, mod / np.nanmax(mod), label='%.1f' % (F[np.argmax(mod)]), color='c')
         ax01.semilogx(F, mod15 / np.nanmax(mod15), label='%.1f' % (F[np.argmax(mod15)]), color='r')
         ax01.set_ylim([0, 1.05])
-        # plt.legend()
         ax01.set_xlabel('Stimulus Frequency [Hz]')
         ax01.set_ylabel('Normalised Response Amplitude')
         ax01.set_xlim([0, 200])
@@ -1067,16 +1072,13 @@ class GRAPH():
         # PLot weights
         # --------------------------------------------------------------------------------
         ax1 = plt.subplot(434)
-        # plt.imshow(np.array(GAP2D)[100:150,1:20], interpolation='nearest')
         im1 = ax1.imshow(np.array(GAP2D0), interpolation='nearest')
         ax1.set_title(r'$\gamma(t = 0)$')
         fig.colorbar(im1)
-        # plt.figure(figsize=(10,10))
         ax2 = plt.subplot(435)
         im2 = ax2.imshow(np.array(GAP2D), interpolation='nearest')
         ax2.set_title(r'$\gamma(t = END)$')
         fig.colorbar(im2)
-        # plt.figure(figsize=(10,10))
         ax3 = plt.subplot(436)
         im3 = ax3.imshow(np.array(WII2D), interpolation='nearest')
         ax3.set_title(r'$W_{II}$')

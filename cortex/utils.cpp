@@ -23,6 +23,7 @@ void Simulation::initData() {
     CONSOLE = false;
     SOFT = true;
     GLOB = false;
+    BOTH = true;
     RESONANCE = false;
     DEBUG = false;
 
