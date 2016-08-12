@@ -26,7 +26,9 @@ class Tfnet:
         self.sG = sG
         self.device = device
         self.both = both
-        self.sess = tf.InteractiveSession()
+        NUM_CORES = 1
+        self.sess = tf.InteractiveSession(config=tf.ConfigProto(inter_op_parallelism_threads=NUM_CORES,
+                   intra_op_parallelism_threads=NUM_CORES))
         if input is None:
             self.input = np.ones((T,1), dtype='int32')
 
@@ -293,4 +295,3 @@ class Tfnet:
     
         print('%.2f' % (time.time() - t0))
         self.sess.close()
-        del self.sess

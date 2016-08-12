@@ -1,4 +1,6 @@
 __author__ = 'G. Pernelle'
+import pathos.multiprocessing as mp
+from pathos.multiprocessing import ProcessingPool as Pool
 import matplotlib
 import numpy as np
 matplotlib.use('nbagg')
@@ -11,7 +13,7 @@ import time as t
 import pandas as pd
 import pylab as plt
 import ipyparallel as ipp
-import re, csv, os, datetime, os, sys, cubehelix, multiprocessing, sh, subprocess, math, socket
+import re, csv, os, datetime, os, sys, cubehelix, sh, subprocess, math, socket
 from scipy.fftpack import fft
 from matplotlib import gridspec
 from matplotlib.pyplot import cm
@@ -25,8 +27,6 @@ import seaborn as sns
 import json
 
 cx4 = cubehelix.cmap(reverse=False, start=0., rot=0.5)
-from joblib import Parallel, delayed  
-num_cores = multiprocessing.cpu_count()
 
 plt.style.use('ggplot')
 

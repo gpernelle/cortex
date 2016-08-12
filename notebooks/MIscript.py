@@ -32,7 +32,7 @@ for T in [60000, 10000, 6000]:
                     gpu2.runTFSimul()
                     pear_out = gpu2.vvm[-1000:]
 
-                    filename = "MI6-both-%s_tauv-%d_sg-%d_N-%d_input-%s_T=%d" % (str(both), tauv,sG, N, 'test', T)
+                    filename = "MI7-both-%s_tauv-%d_sg-%d_N-%d_input-%s_T=%d" % (str(both), tauv,sG, N, 'test', T)
                     with open(filename, 'wb') as f:
                         np.savez(f,vvmN1 = gpu1.vvmN1, vvmN2 = gpu1.vvmN2, vvm = gpu1.vvm,
                                 vvmN1_2 = gpu2.vvmN1, vvmN2_2 = gpu2.vvmN2, vvm_2 = gpu2.vvm)
