@@ -17,7 +17,9 @@ class Tfnet:
     # DEVICE = '/gpu:0'
 
     
-    def __init__(self, N=400, T=400, disp=False, spikeMonitor=False, input=None, tauv=15, sG=10, device='/gpu:0', both=False):
+    def __init__(self, N=400, T=400, disp=False, spikeMonitor=False, input=None, tauv=15,
+                 sG=10, device='/gpu:0', both=False, NUM_CORES=8):
+        tf.reset_default_graph()
         self.N = N
         self.T = T
         self.disp = disp
@@ -26,7 +28,8 @@ class Tfnet:
         self.sG = sG
         self.device = device
         self.both = both
-        self.sess = tf.InteractiveSession()
+        self.sess = tf.InteractiveSession(config=tf.ConfigProto(inter_op_parallelism_threads=NUM_CORES,
+                   intra_op_parallelism_threads=NUM_CORES))
         if input is None:
             self.input = np.ones((T,1), dtype='int32')
 
@@ -108,15 +111,6 @@ class Tfnet:
             allowedConnections = tf.Variable(conn)
             nbOfGaps = np.sum(conn)
 
-            # # apple
-            # np.random.seed(2)
-            # _apple = np.random.randint(0, 2, size=(T,1), dtype='int32')
-            # apple = tf.cast(tf.constant(_apple), tf.float32)
-            # # pear
-            # np.random.seed(3)
-            # _pear = np.random.randint(0, 2, size=(T,1), dtype='int32')
-            # pear = tf.cast(tf.constant(_pear), tf.float32)
-
             input = tf.cast(tf.constant(self.input), tf.float32)
 
     
@@ -125,7 +119,7 @@ class Tfnet:
             wII_init = np.ones([N, N], dtype=np.float32) * 500 / N / 0.25
     
             wGap = tf.Variable(wGap_init * conn)
-            WII = tf.Variable(wII_init)
+            WII = tf.Variable(wII_init * conn)
     
             FACT = 1
             ratio = 15

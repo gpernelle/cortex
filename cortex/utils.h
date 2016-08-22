@@ -114,6 +114,7 @@ public:
         if (sim.LTP) sstm << "_LTP-" << sim.LTP;
         sstm << "_model-"<< sim.model;
         sstm << "_sG-"<< sim.sharedG << "_sWII-" << sim.sharedWII << "_tauv-" << sim.tauv << "_both-" << sim.BOTH*1;
+        sstm << "_plast_" << sim.COMPUTE_PLAST*1;
 
         //    //test if path exists
         //    fileExists(sim.path.c_str());
@@ -138,6 +139,7 @@ public:
         if (sim.LTP) sstm << "_LTP-" << sim.LTP;
         sstm << "_model-"<< sim.model;
         sstm << "_sG-"<< sim.sharedG << "_sWII-" << sim.sharedWII << "_tauv-" << sim.tauv << "_both-" << sim.BOTH*1 ;
+        sstm << "_plast_" << sim.COMPUTE_PLAST*1;
 
 
         //    //test if path exists

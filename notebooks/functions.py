@@ -1,4 +1,6 @@
-from functionsTF import *
+# from functionsTF import *
+from utils import *
+
 
 def movingaverage(values,window):
     weigths = np.repeat(1.0, window)/window
@@ -171,7 +173,7 @@ def plotFFT(y, T):
     plt.xlim([0,300])
 
 
-def facet_heatmap(data, col='cor1', cols=['cor1', 'cor2', 'corChange'], **kws):
+def facet_heatmap2(data, col='cor1', cols=['cor1', 'cor2', 'corChange'], **kws):
     #     data = pd.melt(df, id_vars=['tauv', 'sG'], value_vars=cols)
     data = data[data['variable'] == col]
     data = data.pivot(index='tauv', columns='sG', values='value')
@@ -184,7 +186,7 @@ def plotGrid(df, col, title='', cols=['cor1', 'cor2', 'corChange'], **kws):
 
     with sns.plotting_context(font_scale=5.5):
         g = sns.FacetGrid(data, col="both", row="T")
-    g = g.map_dataframe(facet_heatmap, col=col, cols=cols, **kws)
+    g = g.map_dataframe(facet_heatmap2, col=col, cols=cols, **kws)
     plt.subplots_adjust(top=0.9)
     g.fig.suptitle(title, fontsize='16')
     g.savefig(DIRECTORY + 'cor-plot_%s.png' % col)

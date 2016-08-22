@@ -112,9 +112,10 @@ class IO(object):
         DIRECTORY = self.data_path
         ext = "_%d.txt" % i
         # compute the paths of data files.
-        extension = "_g-%.6g_TImean-%d_T-%d_Glob-%d_dt-0.25_N-%d_r-%.2g_S-%d_WII-%d_LTD-%.6g_LTP-%.6g_model-%s_sG-%d_sWII-%d_tauv-%d" \
+        extension = \
+            "_g-%.6g_TImean-%d_T-%d_Glob-%d_dt-0.25_N-%d_r-%.2g_S-%d_WII-%d_LTD-%.6g_LTP-%.6g_model-%s_sG-%d_sWII-%d_tauv-%d_both-%d_plast_%d" \
                     % (self.g, self.TImean, self.T, self.glob, self.N, self.r, self.S, self.WII, self.LTD, self.LTP,
-                       self.model, self.sG, self.sWII, self.tauv)
+                       self.model, self.sG, self.sWII, self.tauv, self.BOTH+1, self.plast)
         extension += ext
         ssp1_p = DIRECTORY + "sspE" + extension
         ssp1 = np.fromfile(ssp1_p, dtype='double', count=-1, sep=" ")
@@ -130,9 +131,10 @@ class IO(object):
         ext = "_%d.txt" % i
         # compute the paths of data files.
         if extension is None:
-            extension = "_g-%.6g_TImean-%d_T-%d_Glob-%d_dt-0.25_N-%d_r-%.2g_S-%d_WII-%d_LTD-%.6g_LTP-%.6g_model-%s_sG-%d_sWII-%d_tauv-%d" \
+            extension = \
+                "_g-%.6g_TImean-%d_T-%d_Glob-%d_dt-0.25_N-%d_r-%.2g_S-%d_WII-%d_LTD-%.6g_LTP-%.6g_model-%s_sG-%d_sWII-%d_tauv-%d_both-%d_plast_%d" \
                         % (self.g, self.TImean, self.T, self.glob, self.N, self.r, self.S, self.WII, self.LTD, self.LTP,
-                           self.model, self.sG, self.sWII, self.tauv)
+                           self.model, self.sG, self.sWII, self.tauv, self.BOTH*1, self.plast)
             extension += ext
         path_GAP = DIRECTORY + type + extension
 
@@ -153,10 +155,10 @@ class IO(object):
         TImean = 30
         ext = "_%d.txt" % i
         # compute the paths of data files.
-        extension = "_g-%.6g_TImean-%d_T-%d_Glob-%d_dt-%.2g_N-%d_r-%.2g_S-%d_WII-%d_LTD-%.6g_LTP-%.6g_model-%s_sG-%d_sWII-%d_tauv-%d" \
+        extension = "_g-%.6g_TImean-%d_T-%d_Glob-%d_dt-%.2g_N-%d_r-%.2g_S-%d_WII-%d_LTD-%.6g_LTP-%.6g_model-%s_sG-%d_sWII-%d_tauv-%d_both-%d_plast_%d" \
                     % (self.g, TImean, T, self.glob, self.dt, self.N, self.r, self.S, self.WII, LTD, LTP,
                        self.model,
-                       sG, sWII, tauv)
+                       sG, sWII, tauv, self.BOTH*1, self.plast)
         extension += ext
 
 
@@ -190,9 +192,9 @@ class IO(object):
             print('can\'t find:\t ' + i2_p)
 
         start = 0
-        end = 4000
-        f, Pxy = signal.csd(i1[start:end], i2[start:end], fs=1 / 0.00025, nperseg=1024)
-        f2, Pxy2 = signal.csd(i1[-end:], i2[-end:-1], fs=1 / 0.00025, nperseg=1024)
+        end = 20000
+        f, Pxy = signal.csd(i1[start:end], i2[start:end], fs=1 / 0.00025, nperseg=2048)
+        f2, Pxy2 = signal.csd(i1[-end:], i2[-end:-1], fs=1 / 0.00025, nperseg=2048)
 
         maxBegin = np.max(np.abs(Pxy))
         argmaxBegin = np.argmax(np.abs(Pxy))
@@ -271,10 +273,10 @@ class IO(object):
         TImean = 30
         ext = "_%d.txt" % i
         # compute the paths of data files.
-        extension = "_g-%.6g_TImean-%d_T-%d_Glob-%d_dt-%.2g_N-%d_r-%.2g_S-%d_WII-%d_LTD-%.6g_LTP-%.6g_model-%s_sG-%d_sWII-%d_tauv-%d_both-%d" \
+        extension = "_g-%.6g_TImean-%d_T-%d_Glob-%d_dt-%.2g_N-%d_r-%.2g_S-%d_WII-%d_LTD-%.6g_LTP-%.6g_model-%s_sG-%d_sWII-%d_tauv-%d_both-%d_plast_%d" \
                     % (self.g, TImean, T, self.glob, self.dt, self.N, self.r, self.S,
                        self.WII, self.LTD, self.LTP, self.model,
-                       self.sG, self.sWII, self.tauv, self.BOTH)
+                       self.sG, self.sWII, self.tauv, self.BOTH*1, self.plast*1)
         extension += ext
 
         path_x = DIRECTORY + "spike_x" + extension
@@ -340,8 +342,8 @@ class IO(object):
 class Cortex(IO):
     def __init__(self, *args, **kwargs):
         super(Cortex, self).__init__(*args, **kwargs)
-
-        if os.uname()[1]=='OSX':
+        import getpass
+        if os.uname()[1]=='OSX' or getpass.getuser()=='guillaume':
             self.computer = "guillaume"
             self.executable_path = "/Users/%s/Dropbox/ICL-2014/Code/C-Code/cortex/cortex/" % self.computer
             self.data_path = "/Users/%s/Dropbox/ICL-2014/Code/C-Code/cortex/data/" % self.computer
@@ -373,6 +375,7 @@ class GRAPH():
         self.cortex = cortex
         self.figsize11 = (6,6)
         self.figsize21 = (12,5)
+        self.figsize31 = (18, 5)
         self.figsize22 = (8,8)
         self.figsize12 = (5,8)
         self.axes12 = [0.85, 0.25, 0.02, 0.5]
@@ -380,6 +383,7 @@ class GRAPH():
         self.axes21 = [0.81, 0.12, 0.010, 0.72]
         self.axes22 = [0.85, 0.15, 0.02, 0.7]
         self.ext = '_%d_%d.svg'%(self.cortex.sWII, self.cortex.N)
+        self.cmap_level = 'magma'
         ## to print figures
         # self.figsize11 = (8, 6)
         # self.figsize21 = (14, 6)
@@ -772,7 +776,7 @@ class GRAPH():
         zEnd = daEnd[:, 2]
         zrBegin = zBegin.reshape(nbVal, int(len(zBegin) / nbVal)).transpose()
         zrEnd = zEnd.reshape(nbVal, int(len(zEnd) / nbVal)).transpose()
-        zr = zrEnd / zrBegin
+        zr = zrEnd / (zrBegin)
 
         if both:
             if not plast:
@@ -792,7 +796,7 @@ class GRAPH():
             z2End = da2End[:, 2]
             zr2Begin = z2Begin.reshape(nbVal, len(z2Begin) // nbVal).transpose()
             zr2End = z2End.reshape(nbVal, len(z2End) // nbVal).transpose()
-            zr2 = zr2End / zr2Begin
+            zr2 = zr2End / (zr2Begin)
             # vmax = max(np.max(zr), np.max(zr2))
             if vmax is None:
                 vmax = max(np.percentile(zr,98), np.percentile(zr2,98))
@@ -1029,8 +1033,8 @@ class GRAPH():
         c.tauv = tauv
         c.readSimulation()
 
-        titlestr = r'$N=%d$  $\frac{\alpha_{LTP}}{\alpha_{LTD}}=%d$  $g_0=%.1f$  $\nu=%d$ $sG=%d$ $sW_{II}=%d$ $LTD=%.6g$ $\tau_v=%d$' \
-                   % (c.N, c.r, c.g, c.sigma, c.sG, c.sWII, c.LTD, c.tauv)
+        titlestr = r'$N=%d$  $\frac{\alpha_{LTP}}{\alpha_{LTD}}=%d$  $g_0=%.1f$  $\nu=%d$ $sG=%d$ $sW_{II}=%d$ $LTD=%.6g$ $\tau_v=%d$ BOTH=%d' \
+                   % (c.N, c.r, c.g, c.sigma, c.sG, c.sWII, c.LTD, c.tauv, c.BOTH*1)
 
         GAP2D = c.readMatrix(type="GAP")
         GAP2D0 = c.readMatrix(type="GAP0")
@@ -1046,11 +1050,14 @@ class GRAPH():
         # --------------------------------------------------------------------------------
         # plot gamma
         # --------------------------------------------------------------------------------
-        ax0 = fig.add_subplot(421)
-        ax0.plot(xax(c.gamma, c.T), c.gamma, color='g')
-        ax0.plot(xax(c.gammaN1, c.T), c.gammaN1*(1+0.0*c.sG), color='r')
-        ax0.plot(xax(c.gammaN2, c.T), c.gammaN2*(1+0.0*c.sG), color='c')
-        ax0.set_title('Mean gap junction coupling')
+        try:
+            ax0 = fig.add_subplot(421)
+            # ax0.plot(xax(c.gamma, c.T), c.gamma/2**0.5, color='g')
+            ax0.plot(xax(c.gammaN1, c.T), c.gammaN1*(1+0.0*c.sG), color='r')
+            ax0.plot(xax(c.gammaN2, c.T), c.gammaN2*(1+0.0*c.sG), color='c')
+            ax0.set_title('Mean gap junction coupling')
+        except:
+            pass
 
         # --------------------------------------------------------------------------------
         # plot subthreshold resonance
@@ -1088,8 +1095,8 @@ class GRAPH():
         #--------------------------------------------------------------------------------
         ax1 = fig.add_subplot(425)
         ax2 = fig.add_subplot(426)
-        self.plotRaster(c.spikes_x[0:4000], c.spikes_y[0:4000], ax=ax1)
-        self.plotRaster(c.spikes_x[-5000:-1000], c.spikes_y[-5000:-1000], ax=ax2)
+        self.plotRaster(c.spikes_x[0:50*c.N], c.spikes_y[0:50*c.N], ax=ax1)
+        self.plotRaster(c.spikes_x[-1000-50*c.N:-1000], c.spikes_y[-1000-50*c.N:-1000], ax=ax2)
 
         #--------------------------------------------------------------------------------
         # Cross Spectrum Gaph
@@ -1099,9 +1106,12 @@ class GRAPH():
         ax7 = self.plotCSD(c.i1, c.i2, start=1000, end=5000, ax=ax7, sharey=True)
         ax8 = self.plotCSD(c.i1, c.i2, start=-4000, end=-1, ax=ax8, sharey=True)
 
+        ax7.set_ylim([0,200])
+        ax8.set_ylim([0,200])
+
         plt.suptitle(titlestr, y=0.93)
-        plt.savefig(DIRECTORY + "full_sWII-%d_sG-%d_WII-%d_G-%d_N-%d_t-%d_LTD-%d_tauv-%d" % (
-            c.sWII, c.sG, c.WII, c.g, c.N, c.T, c.LTD > 1e-8, c.tauv))
+        plt.savefig(DIRECTORY + "full_sWII-%d_sG-%d_WII-%d_G-%d_N-%d_t-%d_LTD-%d_tauv-%d_both-%d" % (
+            c.sWII, c.sG, c.WII, c.g, c.N, c.T, c.LTD > 1e-8, c.tauv, c.BOTH*1))
         del fig
         # gr.plotRasterGPU(spikes_x[:],spikes_y[:], "test_%s.html"%(str(G)), saveImg=0)
         return 0
@@ -1160,7 +1170,7 @@ class GRAPH():
         ax1 = fig.add_subplot(121)
         ax2 = fig.add_subplot(122)
 
-        cmap = plt.cm.RdBu_r
+        cmap = self.cmap_level
         if vmax is None:
             if kind == 'max':
                 vmin = min(list(map(np.min, [df.maxBegin, df.maxEnd])))
@@ -1209,7 +1219,7 @@ class GRAPH():
         ax3 = fig.add_subplot(223)
         ax4 = fig.add_subplot(224)
 
-        cmap = plt.cm.RdBu_r
+        cmap = self.cmap_level
         if vmax == None:
             if kind == 'frequency':
                 vmax = max(list(map(np.max, [df.f1Begin, df.f2Begin, df.f1End, df.f2End])))
@@ -1322,15 +1332,17 @@ class GRAPH():
         plt.savefig(DIRECTORY + kind + 'both_change_cluster%s%s' % (str(LTD), self.ext))
         return 0
 
-    def plotChangePlast(self, dataframe, kind='max', network='', title='', both=None, vmax=None, sWII=10):
+    def plotChangePlast(self, dataframe, kind='max', network='', title='', both=None, vmax=None, sWII=10, ax=None):
 
-        fig = plt.figure(figsize=self.figsize11)
-
+        if ax is None:
+            fig = plt.figure(figsize=self.figsize11)
+            ax1 = fig.add_subplot(111)
+        else: ax1 = ax
         df = dataframe
         df = df[(df['sWII'] == sWII)]
         extent = [np.min(df['sG']), np.max(df['sG']), np.min(df['tauv']), np.max(df['tauv'])]
 
-        ax1 = fig.add_subplot(111)
+
 
         cmap = plt.cm.RdYlGn
 
@@ -1346,6 +1358,7 @@ class GRAPH():
         cbar = fig.colorbar(im, cax=cbar_ax)
 
         plt.savefig(DIRECTORY + kind + '_changePLAST_cluster%s'% self.ext)
+        return ax1, im
 
 
     def plotChangePlast2(self, dataframe, kind='max', network='', title='', both=None,
