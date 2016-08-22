@@ -6,6 +6,7 @@ import time
 import numpy as np
 from io import BytesIO
 import mutual_info
+import gc
 
 DEVICE = '/cpu:0'
 i=0
@@ -21,9 +22,10 @@ for T in [60000, 10000, 6000]:
 
 
 def runFn(things):
+    F = 10
     T, both, N, sG, tauv, i = things
-    apple = generateInput(2, T, 60)
-    pear = generateInput(3, T, 60)
+    apple = generateInput(2, T, F)
+    pear = generateInput(3, T, F)
     print('*'*80)
     print('%d / %d'%(i,3*2*1*4*16))
     ### input 1: apple
@@ -39,12 +41,13 @@ def runFn(things):
     gpu2.runTFSimul()
     pear_out = gpu2.vvm[-1000:]
 
-    filename = "MI7-both-%s_tauv-%d_sg-%d_N-%d_input-%s_T=%d" % (str(both), tauv,sG, N, 'test', T)
+    filename = "MI11-both-%s_tauv-%d_sg-%d_N-%d_input-%s_T-%d_F-%d" % (str(both), tauv,sG, N, 'test', T, F)
     with open(filename, 'wb') as f:
         np.savez(f,vvmN1 = gpu1.vvmN1, vvmN2 = gpu1.vvmN2, vvm = gpu1.vvm,
                 vvmN1_2 = gpu2.vvmN1, vvmN2_2 = gpu2.vvmN2, vvm_2 = gpu2.vvm)
     del gpu1
     del gpu2
+    gc.collect()
 
 p.map(runFn, params)
 #p.get()

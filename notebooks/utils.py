@@ -1,6 +1,7 @@
 __author__ = 'G. Pernelle'
 import pathos.multiprocessing as mp
 from pathos.multiprocessing import ProcessingPool as Pool
+from pathos.multiprocessing import ThreadingPool as tPool
 import matplotlib
 import numpy as np
 matplotlib.use('nbagg')

@@ -190,9 +190,9 @@ class IO(object):
             print('can\'t find:\t ' + i2_p)
 
         start = 0
-        end = 4000
-        f, Pxy = signal.csd(i1[start:end], i2[start:end], fs=1 / 0.00025, nperseg=1024)
-        f2, Pxy2 = signal.csd(i1[-end:], i2[-end:-1], fs=1 / 0.00025, nperseg=1024)
+        end = 20000
+        f, Pxy = signal.csd(i1[start:end], i2[start:end], fs=1 / 0.00025, nperseg=2048)
+        f2, Pxy2 = signal.csd(i1[-end:], i2[-end:-1], fs=1 / 0.00025, nperseg=2048)
 
         maxBegin = np.max(np.abs(Pxy))
         argmaxBegin = np.argmax(np.abs(Pxy))

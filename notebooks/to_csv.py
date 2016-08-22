@@ -7,6 +7,7 @@ from __future__ import division
 from IO import *
 from cycler import cycler
 from numba import autojit
+from joblib import Parallel, delayed  
 
 today = datetime.date.today()
 todayStr = '%04d%02d%02d' % (today.year, today.month, today.day)
