@@ -57,6 +57,7 @@ public:
     std::string path;
     std::string csv_path;
     std::string model;
+    std::string simName;
 
     double TsigI;
     double TsigE;
@@ -105,17 +106,12 @@ public:
 
     template <class T>
     int writedata(string name, vector<T> towrite) {
-        int glob = sim.GLOB * 1;
-        stringstream sstm;
-        sstm << name << "_g-" << sim.gamma_c << "_TImean-" << (sim.TImean) << "_T-" << (sim.T * sim.dt) << "_Glob-" <<
-        glob;
-        sstm << "_dt-" << sim.dt << "_N-" << sim.N << "_r-" << sim.r << "_S-" << sim.stimulation << "_WII-" << sim.GammaII;
-        if (sim.LTD) sstm << "_LTD-" << sim.LTD;
-        if (sim.LTP) sstm << "_LTP-" << sim.LTP;
-        sstm << "_model-"<< sim.model;
-        sstm << "_sG-"<< sim.sharedG << "_sWII-" << sim.sharedWII << "_tauv-" << sim.tauv << "_both-" << sim.BOTH*1;
-        sstm << "_plast_" << sim.COMPUTE_PLAST*1;
+        /*
+         * WRITE 1D array to file
+         */
 
+        stringstream sstm;
+        sstm = makeName(name);
         //    //test if path exists
         //    fileExists(sim.path.c_str());
         const string path_x = sim.path + sstm.str() + sim.ext;
@@ -129,18 +125,11 @@ public:
 
     int writemap(string name, double ** (map))
     {
-
-        int glob = sim.GLOB * 1;
+        /*
+         * Write 2D array to file
+         */
         stringstream sstm;
-        sstm << name << "_g-" << sim.gamma_c << "_TImean-" << (sim.TImean) << "_T-" << (sim.T * sim.dt) << "_Glob-" <<
-        glob;
-        sstm << "_dt-" << sim.dt << "_N-" << sim.N << "_r-" << sim.r << "_S-" << sim.stimulation << "_WII-" << sim.GammaII;
-        if (sim.LTD) sstm << "_LTD-" << sim.LTD;
-        if (sim.LTP) sstm << "_LTP-" << sim.LTP;
-        sstm << "_model-"<< sim.model;
-        sstm << "_sG-"<< sim.sharedG << "_sWII-" << sim.sharedWII << "_tauv-" << sim.tauv << "_both-" << sim.BOTH*1 ;
-		sstm << "_plast_" << sim.COMPUTE_PLAST*1;
-
+        sstm = makeName(name);
         //    //test if path exists
         //    fileExists(sim.path.c_str());
         const string path_x = sim.path + sstm.str() + sim.ext;
@@ -157,6 +146,20 @@ public:
         return 0;
     }
 
+    stringstream makeName(string name) {
+        int glob = sim.GLOB * 1;
+        stringstream sstm;
+        sstm << sim.simName << name << "_g-" << sim.gamma_c << "_TImean-" << (sim.TImean) << "_T-" << (sim.T * sim.dt) << "_Glob-" <<
+             glob;
+        sstm << "_dt-" << sim.dt << "_N-" << sim.N << "_r-" << sim.r << "_S-" << sim.stimulation << "_WII-" << sim.GammaII;
+        if (sim.LTD) sstm << "_LTD-" << sim.LTD;
+        if (sim.LTP) sstm << "_LTP-" << sim.LTP;
+        sstm << "_model-"<< sim.model;
+        sstm << "_sG-"<< sim.sharedG << "_sWII-" << sim.sharedWII << "_tauv-" << sim.tauv << "_both-" << sim.BOTH*1 ;
+        sstm << "_plast_" << sim.COMPUTE_PLAST*1;
+
+        return sstm;
+    }
 
 };
 
@@ -207,7 +210,7 @@ public:
 
 
     void initData();
-
+    void initConnections();
     void plasticity(double *burstTh, bool *nonbursting, int t);
     void plasticityLocal(double *burstTh, bool *nonbursting, int t);
 } ;
@@ -223,16 +226,6 @@ public:
     void fft( std::vector<double>& inp, std::vector<double>& out, bool forward);
     void computeFFT(vector<double> vm);
 };
-
-
-//double getSum( double *tosum, int N );
-//double getSumB( double *tosum, int N1, int N2 );
-//double getSum( int *tosum, int N );
-//double getAvg( double *tosum, int N );
-//double getAvgB( double *tosum, int N1, int N2 );
-//double getAvg( int *tosum, int N );
-//template <class T> double getAvg(T *tosum, int N, int N2 = 0);
-//template <class T> double getSum(T *tosum, int N, int N2 = 0);
 
 template <class T>
 double getSum(T *tosum, int N, int N2=0) {

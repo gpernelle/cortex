@@ -94,6 +94,8 @@ int main(int argc, const char * argv[])
                 sim1->BOTH = (1==atoi(argv[i + 1])) ;
             } else if (!strcmp(argv[i], "-LTP")) {
                 LTP = atof(argv[i + 1]);
+            } else if (!strcmp(argv[i], "-simName")) {
+                sim1->simName = string(argv[i + 1]);
             } else if (!strcmp(argv[i], "-LTD")) {
                 LTD = atof(argv[i + 1]);
             } else if (!strcmp(argv[i], "-output")) {

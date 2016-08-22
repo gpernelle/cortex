@@ -26,6 +26,7 @@ void Simulation::initData() {
     BOTH = true;
     RESONANCE = false;
     DEBUG = false;
+    simName= "";
 
     LTD = 0;
     LTP = 0;
@@ -154,19 +155,7 @@ void Plasticity::initData() {
     A_gapP = A_gapD * 0.05;
     A_gapP = A_gapD * 0.5;
 
-    allowedConnections = new double *[sim.NI];
-//    VgapIN = sim.gamma_c / sim.NI;
-    for (int i = 0; i < sim.NI; ++i) {
-        allowedConnections[i] = new double[sim.NI];
-    }
-    for (int m = 0; m < sim.NI; ++m) {
-        for (int n = 0; n < sim.NI; ++n) {
-//            allowedConnections[m][n] = bool(int((m+sim.sharedG)/sim.nbInClusters)==int((n+sim.sharedG)/sim.nbInClusters))
-//                                       or bool(int((m)/sim.nbInClusters)==int((n)/sim.nbInClusters)) or (sim.sharedG==-1);
-            allowedConnections[m][n] = (bool(m<(sim.nbInClusters+sim.sharedG) and n<(sim.nbInClusters+sim.sharedG))
-                    or bool((m>=(sim.nbInClusters-sim.sharedG) )and (n>=(sim.nbInClusters-sim.sharedG)))) and (m!=n);
-        }
-    }
+    initConnections();
 
     sim.nbOfGapJunctions = 0;
     for (int m = 0; m < sim.NI; ++m) {
@@ -202,6 +191,23 @@ void Plasticity::initData() {
 
 //    cout <<  "Plasticity initialized: WII: "<< WII << "\t NI:" << sim.NI <<  endl;
 //    cout << std::string(100, '*')<< endl;
+}
+
+/*****************************************************************************
+ * CONNECTIONS
+ *****************************************************************************/
+void Plasticity::initConnections() {
+    allowedConnections = new double *[sim.NI];
+//    VgapIN = sim.gamma_c / sim.NI;
+    for (int i = 0; i < sim.NI; ++i) {
+        allowedConnections[i] = new double[sim.NI];
+    }
+    for (int m = 0; m < sim.NI; ++m) {
+        for (int n = 0; n < sim.NI; ++n) {
+            allowedConnections[m][n] = (bool(m<(sim.nbInClusters+sim.sharedG) and n<(sim.nbInClusters+sim.sharedG))
+                                        or bool((m>=(sim.nbInClusters-sim.sharedG) )and (n>=(sim.nbInClusters-sim.sharedG)))) and (m!=n);
+        }
+    }
 }
 
 /*****************************************************************************
