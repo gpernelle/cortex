@@ -326,6 +326,7 @@ int main(int argc, const char * argv[])
         }
 
         if (t==0) {
+            sim1->sharedGTemp = sim1->sharedG;
             sim1->sharedG = 0;
             sim1->COMPUTE_PLAST = 1;
             plast.initConnections();
@@ -333,7 +334,7 @@ int main(int argc, const char * argv[])
 
 
         if (t==30000) {
-            sim1->sharedG = 30;
+            sim1->sharedG = sim1->sharedGTemp;
             sim1->COMPUTE_PLAST = 0;
             plast.initConnections();
         }

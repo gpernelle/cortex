@@ -49,6 +49,7 @@ public:
     int stimulation;
     int sharedWII;
     int sharedG;
+    int sharedGTemp;
     std::string root;
     std::string computer;
     std::string directory;
