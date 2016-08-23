@@ -802,7 +802,7 @@ int main(int argc, const char * argv[])
 		<< ";" << FFT.fftFreq <<";" << FFT.fftPower\
             	<< ";" << FFT1.fftFreq <<";" << FFT1.fftPower\
             	<< ";" << FFT2.fftFreq <<";" << FFT2.fftPower\
-            	<< ";" << sim1->sharedG << ";" << sim1->sharedWII << ";" << sim1->tauv << endl;
+            	<< ";" << sim1->sharedGTemp << ";" << sim1->sharedWII << ";" << sim1->tauv << endl;
     }
     if (sim1->RESONANCE) {
         string path_csv =  sim1->root+sim1->computer+sim1->directory+"resonance.csv";
