@@ -73,12 +73,22 @@ def resonanceFS(tauv=15):
 
 @autojit
 def fourier(signal):
+    '''
+    Return frequency with highest power, and its power
+    :param signal: list of 1D numpy array
+    :return: frequency, power
+    '''
+    signal = np.array(signal)
     f_val, p_val = maxPowerFreq(signal[int(signal.shape[0] / 2):], 0.25 / 1000)
     return [f_val, p_val]
 
 @autojit
 def maxPowerFreq(y, dt):
-    # return the max power of the signal and its associated frequency
+    '''
+    :param y: signal
+    :param dt: timestep
+    :return: the max power of the signal and its associated frequency
+    '''
     fs = 1. / dt
     y = y - np.mean(y)
     t = np.arange(0, y.shape[0], 1)
