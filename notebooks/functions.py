@@ -36,7 +36,13 @@ def readDataFile(path):
                 pass
     return x,y
 
-
+def getGSteady(tauv, k, N=100):
+    '''
+    Get steady state value of the gap junction strenght
+    '''
+    df = pd.read_csv('gSteady.csv')
+    df2 = df[(df['tauv']==tauv) & (df['k']==k) & (df['N']==N)]
+    return df2['gSteady'].values[0]
 
 @autojit
 def resonanceFS(tauv=15):
@@ -166,6 +172,13 @@ def plotHeatmap(df, col="cor1", title='', cmap=None, **kws):
     return 0
 
 def generateInput(seed, T, n=30):
+    '''
+    Generate a periodic signal
+    :param seed:
+    :param T:
+    :param n: 
+    :return:
+    '''
     dt = 0.00025
     np.random.seed(seed)
     x = np.linspace(0.0, dt*T, T)
@@ -173,6 +186,26 @@ def generateInput(seed, T, n=30):
     for i in range(5,300,n):
         y += np.random.rand()*np.sin(i * 2.0*np.pi*x)
     return y/np.max(y)
+
+def generateInput2(seed, T, n=None):
+    '''
+    Generate colored noise
+    :param seed:
+    :param T:
+    :param n:
+    :return:
+    '''
+    scaling = 1 / (1 / (2 * 2 / 0.25)) ** 0.5 * 70
+    dt = 0.25
+    np.random.seed(seed)
+    x = np.linspace(0.0, dt*T, T)
+    signal = np.zeros(len(x))
+    iBack = 0
+    for i in range(len(x)):
+        iBack = iBack + dt / 2 * (-iBack + np.random.rand()-0.5)
+        iEff = iBack * scaling +  20
+        signal[i] = iEff
+    return signal / np.max(signal)
 
 def plotFFT(y, T):
     dt = 0.00025

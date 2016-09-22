@@ -8,49 +8,80 @@ from io import BytesIO
 import mutual_info
 import gc
 
-DEVICE = '/cpu:0'
 i=0
 p = Pool(nodes=56)
 params = []
-T = 4000
-for tauv in np.arange(15,90,5):
-        for N in [400]:
-            for sG in [0,10,20,50]:
-                for tauv in np.arange(15,95,5):
+for k in range(0,50,5):
+    for tauv in np.arange(15,90,5):
+            for N in [100]:
+                for g in np.arange(0,20,2):
                     i+=1
-                    params.append([T, both, N, sG, tauv, i])
+                    params.append([N, g, tauv, i, k])
+
+## colored noise
+# def runFn(things):
+#     N, g, tauv, i, k = things
+#     T = 4000
+#     ### input: colored noise
+#     apple = generateInput2(2, T) * k
+#     print('*'*80)
+#     print('%d / %d'%(i,25*40*10))
+#
+#     gpu = TfSingleNet(N=N,
+#                       T=T,
+#                       disp=False,
+#                       tauv=tauv,
+#                       device='/cpu:0',
+#                       spikeMonitor=False,
+#                       g0=g,
+#                       startPlast = 999999,
+#                       NUM_CORES = 1)
+#     gpu.input = apple
+#     gpu.runTFSimul()
+#
+#
+#     filename = "PhasePlan2-tauv-%d_g-%d_N-%d_T-%d_k-%d" % (tauv, g, N, T, k)
+#     with open(filename, 'wb') as f:
+#         four = fourier(gpu.vvm[100:])
+#         np.savez(f,
+#                  vvm = gpu.vvm,
+#                  freq = four[0],
+#                  power = four[1]
+#                 )
+#     del gpu
+#     gc.collect()
 
 
-                    
-scaling = 1 / (1 / (2 * 2 / 0.25)) ** 0.5 * 70
-                    
-                    
 def runFn(things):
-    F = 10
-    T, both, N, sG, tauv, i = things
-    apple = generateInput2(2, T, F)
-    pear = generateInput2(3, T, F)
+    N, g, tauv, i, k = things
+    T = 4000
+    ### input: colored noise
+    apple = generateInput2(2, T) * k
     print('*'*80)
-    print('%d / %d'%(i,3*2*1*4*16))
-    ### input 1: apple
-    gpu1 = Tfnet(N=N,T=T, disp=False, tauv=tauv, sG=sG, device=DEVICE, both=both, spikeMonitor=False)
-    gpu1.input = apple
-    gpu1.runTFSimul()
-    apple_out = gpu1.vvm[-1000:]
-    
-    ### input 2: pear
-    disp=False
-    gpu2 = Tfnet(N=N,T=T, disp=False, tauv=tauv, sG=sG, device=DEVICE, both=both, spikeMonitor=False)
-    gpu2.input = pear
-    gpu2.runTFSimul()
-    pear_out = gpu2.vvm[-1000:]
+    print('%d / %d'%(i,25*40*10))
 
-    filename = "MI11-both-%s_tauv-%d_sg-%d_N-%d_input-%s_T-%d" % (str(both), tauv,sG, N, 'noise', T)
+    gpu = TfSingleNet(N=N,
+                      T=T,
+                      disp=False,
+                      tauv=tauv,
+                      device='/cpu:0',
+                      spikeMonitor=False,
+                      g0=g,
+                      startPlast = 999999,
+                      NUM_CORES = 1)
+    gpu.input = np.ones(len(apple))*k - 20
+    gpu.runTFSimul()
+
+
+    filename = "PhasePlan3-tauv-%d_g-%d_N-%d_T-%d_k-%d" % (tauv, g, N, T, k)
     with open(filename, 'wb') as f:
-        np.savez(f,vvmN1 = gpu1.vvmN1, vvmN2 = gpu1.vvmN2, vvm = gpu1.vvm,
-                vvmN1_2 = gpu2.vvmN1, vvmN2_2 = gpu2.vvmN2, vvm_2 = gpu2.vvm)
-    del gpu1
-    del gpu2
+        four = fourier(gpu.vvm[100:])
+        np.savez(f,
+                 vvm = gpu.vvm,
+                 freq = four[0],
+                 power = four[1]
+                )
+    del gpu
     gc.collect()
 
 re = p.amap(runFn, params)
