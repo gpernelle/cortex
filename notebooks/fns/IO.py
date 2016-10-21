@@ -1,10 +1,4 @@
-from functions import *
-
-
-
-# c = ipp.Client(profile='cluster')
-# lview = c.load_balanced_view()
-# lview.block = True
+from fns.functions import *
 
 def xax(gamma, duration):
     x= np.arange(0,(duration-1)/1000,(duration)/1000/len(gamma) )
@@ -523,7 +517,7 @@ class GRAPH():
         customcmap = [(x / 24.0, x / 48.0, 0.05) for x in range(len(dataframe))]
 
         dataframe.plot(kind="hexbin",
-                       y='nuEI', x='gammaC', C=column, gridsize=gridsize, ax=ax, alpha=a, legend=False, colormap=cx4,
+                       y='nuEI', x='gammaC', C=column, gridsize=gridsize, ax=ax, alpha=a, legend=False, colormap=plt.cm.viridis,
                        # edgecolor='w',
                        title=title)
         ax.set_title(title, y=1.03)
@@ -559,7 +553,7 @@ class GRAPH():
         return ax
 
     def plotDiagram(self, figure, ax, dataframe, title, column, filename, save=True, front=False, gridsize=60,
-                    extent=[0, 7.0, 0, 200], cmap=cx4, bad=False, format=None):
+                    extent=[0, 7.0, 0, 200], cmap=plt.cm.viridis, bad=False, format=None):
         ax.set_ylim(ymin=extent[2], ymax=extent[3])
         # Set color transparency (0: transparent; 1: solid)
         a = 1
@@ -577,7 +571,7 @@ class GRAPH():
                 cmap.set_bad('white')
                 plt.imshow(np.ma.masked_values(zr, 0), cmap=cmap)
             image = ax.imshow(zr, extent=extent, cmap=cmap, aspect=(extent[1] - extent[0]) / (
-            extent[3] - extent[2]))  # , cmap =cx4)# drawing the function
+            extent[3] - extent[2]))  # , cmap =plt.cm.viridis)# drawing the function
             if format == None:
                 plt.colorbar(image, format='%.2g')
             else:
@@ -624,7 +618,7 @@ class GRAPH():
         return ax
 
     def plotDiagramCSD(self, figure, ax, dataframe, title, column, filename, save=False, front=False, gridsize=60,
-                        extent=[0, 7.0, 0, 200], cmap=cx4, bad=False, format=None, vmin=None, vmax=None, plast=False):
+                        extent=[0, 7.0, 0, 200], cmap=plt.cm.viridis, bad=False, format=None, vmin=None, vmax=None, plast=False):
         '''
         to check output image orientation
         -1   1
@@ -650,7 +644,7 @@ class GRAPH():
                 cmap.set_bad('white')
                 plt.imshow(np.ma.masked_values(zr, 0), cmap=cmap)
             image = ax.imshow(zr, extent=extent, cmap=cmap, interpolation='nearest', vmin=vmin, vmax=vmax,
-                              aspect=(extent[1] - extent[0]) / (extent[3] - extent[2]))  # , cmap =cx4)# drawing the function
+                              aspect=(extent[1] - extent[0]) / (extent[3] - extent[2]))  # , cmap =plt.cm.viridis)# drawing the function
             # if format == None:
                 # plt.colorbar(image, format='%.2g', cax=ax)
             # else:
@@ -681,7 +675,7 @@ class GRAPH():
         return ax, image
 
     def plotDiagramActivity(self, figure, ax, dataframe, title, column, filename, save=False, front=False, gridsize=60,
-                           extent=[0, 7.0, 0, 200], cmap=cx4, bad=False, format=None, vmin=None, vmax=None,
+                           extent=[0, 7.0, 0, 200], cmap=plt.cm.viridis, bad=False, format=None, vmin=None, vmax=None,
                            plast=False):
             '''
             to check output image orientation
@@ -708,7 +702,7 @@ class GRAPH():
                     cmap.set_bad('white')
                     plt.imshow(np.ma.masked_values(zr, 0), cmap=cmap)
                 image = ax.imshow(zr, extent=extent, cmap=cmap, interpolation='nearest', vmin=vmin, vmax=vmax,
-                                  aspect=(extent[1] - extent[0]) / (extent[3] - extent[2]))  # , cmap =cx4)# drawing the function
+                                  aspect=(extent[1] - extent[0]) / (extent[3] - extent[2]))  # , cmap =plt.cm.viridis)# drawing the function
                 # if format == None:
                 # plt.colorbar(image, format='%.2g', cax=ax)
                 # else:
@@ -739,7 +733,7 @@ class GRAPH():
             return ax, image
 
     def plotDiagramChangeCSD(self, figure, ax, dataframe, title, column, filename, save=True, front=False,
-                           extent=[0, 7.0, 0, 200], cmap=cx4, bad=False,
+                           extent=[0, 7.0, 0, 200], cmap=plt.cm.viridis, bad=False,
                              format=None, vmin=None, vmax=None, both=None, plast=None, sWII=10):
 
 
@@ -814,7 +808,7 @@ class GRAPH():
                 cmap.set_bad('white')
                 plt.imshow(np.ma.masked_values(zr, 0), cmap=cmap)
             image = ax.imshow(zr, extent=extent, cmap=cmap, interpolation='nearest', norm=MidpointNormalize(midpoint=1.), vmin=vmin, vmax=vmax,
-                              aspect=(extent[1] - extent[0]) / (extent[3] - extent[2]))  # , cmap =cx4)# drawing the function
+                              aspect=(extent[1] - extent[0]) / (extent[3] - extent[2]))  # , cmap =plt.cm.viridis)# drawing the function
             # if format == None:
             # plt.colorbar(image, format='%.2g', cax=ax)
             # else:
@@ -1024,7 +1018,7 @@ class GRAPH():
         ax.set_ylabel(r'Excitatory input $\nu$')
         ax.set_title('Hard. all-spiking', y=1.08)
         image = ax.imshow(Z, interpolation='nearest', extent=extent, cmap=cx_blue,
-                          aspect=2 / 200)  # , cmap =cx4)# drawing the function
+                          aspect=2 / 200)  # , cmap =plt.cm.viridis)# drawing the function
         plt.colorbar(image)
         return ax
 

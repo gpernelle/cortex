@@ -15,7 +15,7 @@ for T in [16000]:
         for N in [2000]:
             for sG in [0, 20, 100, 200]:
                 for tauv in np.arange(15, 90, 20):
-                    for k in [10, 50,100]:
+                    for k in [100]:
                         i += 1
                         params.append([T, both, N, sG, tauv, i, k])
 
@@ -66,7 +66,7 @@ def runFnNoPlast(things):
     gpu2.disp = False
     gpu2.runTFSimul()
 
-    filename = "MIEvolveNoPlast4-both-%s_tauv-%d_sg-%d_N-%d_input-%s_T-%d_k-%d" % (str(both), tauv, sG, N, 'noise', T, k)
+    filename = "MIEvolveNoPlast5-both-%s_tauv-%d_sg-%d_N-%d_input-%s_T-%d_k-%d" % (str(both), tauv, sG, N, 'noise', T, k)
     with open(filename, 'wb') as f:
         np.savez(f, vvmN1=gpu1.vvmN1, vvmN2=gpu1.vvmN2, vvm=gpu1.vvm,
                  vvmN1_2=gpu2.vvmN1, vvmN2_2=gpu2.vvmN2, vvm_2=gpu2.vvm,
@@ -99,7 +99,7 @@ def runFnPlast(things):
     gpu2.disp = False
     gpu2.runTFSimul()
 
-    filename = "MIEvolvePlast4-both-%s_tauv-%d_sg-%d_N-%d_input-%s_T-%d_k-%d" % (str(both), tauv, sG, N, 'noise', T, k)
+    filename = "MIEvolvePlast5-both-%s_tauv-%d_sg-%d_N-%d_input-%s_T-%d_k-%d" % (str(both), tauv, sG, N, 'noise', T, k)
     with open(filename, 'wb') as f:
         np.savez(f, vvmN1=gpu1.vvmN1, vvmN2=gpu1.vvmN2, vvm=gpu1.vvm,
                  vvmN1_2=gpu2.vvmN1, vvmN2_2=gpu2.vvmN2, vvm_2=gpu2.vvm,

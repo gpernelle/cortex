@@ -1,6 +1,4 @@
-# from functionsTF import *
-from utils import *
-
+from fns.utils import *
 
 def movingaverage(values,window):
     weigths = np.repeat(1.0, window)/window
@@ -36,13 +34,13 @@ def readDataFile(path):
                 pass
     return x,y
 
-def getGSteady(tauv, k, N=100):
-    '''
-    Get steady state value of the gap junction strenght
-    '''
-    df = pd.read_csv('gSteady.csv')
-    df2 = df[(df['tauv']==tauv) & (df['k']==k) & (df['N']==N)]
-    return df2['gSteady'].values[0]
+# def getGSteady(tauv, k, N=100):
+#     '''
+#     Get steady state value of the gap junction strenght
+#     '''
+#     df = pd.read_csv('gSteady.csv')
+#     df2 = df[(df['tauv']==tauv) & (df['k']==k) & (df['N']==N)]
+#     return df2['gSteady'].values[0]
 
 @autojit
 def resonanceFS(tauv=15):
@@ -113,6 +111,11 @@ def svg2eps(filename, path = '/Users/GP1514/Dropbox/0000_PhD/figures/20160704/')
                             '-E', '%s%s.eps'%(path,filename), '--without-gui',
                              '--export-ignore-filters','--export-ps-level=3'])
 
+def svg2png(filename, path = '/Users/GP1514/Dropbox/0000_PhD/figures/20160704/'):
+    subprocess.check_output(["inkscape", '%s%s.svg'%(path, filename),
+                            '-e', '%s%s.png'%(path,filename), '--without-gui',
+                             '--export-ignore-filters','--export-png', '-d 300'])
+
 
 def vmin_vmax(df, kind="burst", v=0):
     data = pd.melt(df, id_vars=['tauv', 'sG'], value_vars=[kind + '1', kind + '2'])
@@ -126,13 +129,13 @@ def vmin_vmax(df, kind="burst", v=0):
     return vmin, vmax
 
 
-def facet_heatmap(data, df=None, v=0, vmin=None, vmax=None, **kws):
+def facet_heatmap(data, df=None, v=0, vmin=None, vmax=None, index='tauv', columns='sG', **kws):
     kind = data['variable'].get_values()[0][:-1]
     if vmin == None:
         vmin, _ = vmin_vmax(df, kind=kind, v=v)
     if vmax == None:
         _, vmax = vmin_vmax(df, kind=kind, v=v)
-    data = data.pivot(index='tauv', columns='sG', values='value')
+    data = data.pivot(index=index, columns=columns, values='value')
     im = sns.heatmap(data, yticklabels=10, xticklabels=10, vmin=vmin, vmax=vmax, **kws)  # <-- Pass kwargs to heatmap
     im.invert_yaxis()
 
@@ -151,25 +154,25 @@ def plotGridHeatmap(df, col_wrap=2, cols=['burst1', 'spike1', 'burst2', 'spike2'
     return g
 
 pd.options.mode.chained_assignment = None
-def plotHeatmap(df, col="cor1", title='', cmap=None, **kws):
+def plotHeatmap(df, col="cor1", title='', cmap=None, y='tauv', x='sG',xres = 10, yres=10, **kws):
     plt.figure()
     '''
     plot heatmap using seaborn library
     '''
-    burst = df[['tauv', 'sG', col]]
+    burst = df[[y, x, col]]
     burst.loc[:, (col)] = burst[col].astype(float)
-    burst.loc[:,('tauv')] = burst['tauv'].astype(int)
-    burst.loc[:,('sG')] = burst['sG'].astype(int)
-    c = burst.pivot('tauv','sG', col)
+    burst.loc[:,(y)] = burst[y].astype(float)
+    burst.loc[:,(x)] = burst[x].astype(float)
+    c = burst.pivot(y, x, col)
 
 
-    im = sns.heatmap(c, yticklabels=5, xticklabels=2, cmap=cmap, **kws)
+    im = sns.heatmap(c, yticklabels=yres, xticklabels=xres, cmap=cmap, **kws)
     im.invert_yaxis()
     sns.set_style("whitegrid")
     if not title:
         title=col
     plt.title(title)
-    return 0
+    return im
 
 def generateInput(seed, T, n=30):
     '''
@@ -202,8 +205,8 @@ def generateInput2(seed, T, n=None):
     signal = np.zeros(len(x))
     iBack = 0
     for i in range(len(x)):
-        iBack = iBack + dt / 2 * (-iBack + np.random.rand()-0.5)
-        iEff = iBack * scaling +  20
+        iBack = iBack + dt / 10 * (-iBack + np.random.rand()-0.5)
+        iEff = iBack * scaling + 20
         signal[i] = iEff
     return signal / np.max(signal)
 
@@ -229,7 +232,8 @@ def plotGrid(df, col, title='', cols=['cor1', 'cor2', 'corChange'], **kws):
 
     with sns.plotting_context(font_scale=5.5):
         g = sns.FacetGrid(data, col="both", row="T")
-    g = g.map_dataframe(facet_heatmap2, col=col, cols=cols, **kws)
+    g = g.map_dataframe(facet_heatmap2, col=col, cols=cols,  **kws)
+
     plt.subplots_adjust(top=0.9)
     g.fig.suptitle(title, fontsize='16')
     g.savefig(DIRECTORY + 'cor-plot_%s.png' % col)

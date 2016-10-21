@@ -5,16 +5,15 @@ from pathos.multiprocessing import ThreadingPool as tPool
 import matplotlib
 import numpy as np
 matplotlib.use('nbagg')
-# matplotlib.use('Agg')
 from scipy.optimize import curve_fit
+
 from numba import autojit
 
-import time as t
-
+import importlib as imp
 import pandas as pd
 import pylab as plt
 import ipyparallel as ipp
-import re, csv, os, datetime, os, sys, cubehelix, sh, subprocess, math, socket
+import re, csv, os, datetime, os, sys, cubehelix, sh, subprocess, math, socket, time
 from scipy.fftpack import fft
 from matplotlib import gridspec
 from matplotlib.pyplot import cm
@@ -26,8 +25,13 @@ from scipy import sparse, signal
 import svgutils.transform as sg
 import seaborn as sns
 import json
+from cycler import cycler
+import matplotlib as mpl
+from numba import autojit
+import pyprind
+import gc
 
-cx4 = cubehelix.cmap(reverse=False, start=0., rot=0.5)
+# cx4 = cubehelix.cmap(reverse=False, start=0., rot=0.5)
 
 plt.style.use('ggplot')
 

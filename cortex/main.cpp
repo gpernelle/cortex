@@ -115,6 +115,7 @@ int main(int argc, const char * argv[])
             } else if (!strcmp(argv[i], "-global")) {
                 sim1->GLOB = (atoi(argv[i + 1])==1);
             }
+            sim1->SPIKES = true;
 
         }
     }
