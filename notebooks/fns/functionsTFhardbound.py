@@ -20,7 +20,7 @@ def getGSteady(tauv, k, N=100):
     Get steady state value of the gap junction strenght
     '''
     df = pd.read_csv('gSteady.csv')
-    df2 = df[(df['tauv']==tauv) & (df['k']==k) & (df['N']==N)]
+    df2 = df[(df['tauv']==tauv) & (df['nu']==k) & (df['N']==N) & (df['ratio']==1) & (df['g']==10)]
     return df2['gSteady'].values[0]
 
 #
@@ -410,7 +410,7 @@ class TfSingleNet:
         self.startPlast = startPlast
         self.raster = []
         self.nu = nu
-        self.ratio = 15
+        self.ratio = 1
         self.FACT = 10
         self.lowspthresh = 1.5
         gpu_options = tf.GPUOptions(per_process_gpu_memory_fraction=memfraction)
@@ -482,11 +482,14 @@ class TfSingleNet:
             imean = tf.Variable(0, dtype='float32')
             gammamean = tf.Variable(0, dtype='float32')
             iEffm = tf.Variable(0, dtype='float32')
+            iGapm = tf.Variable(0, dtype='float32')
+            iChemm = tf.Variable(0, dtype='float32')
 
             # currents
             iBack = self.init_float([N, 1], 'iBack')
             iEff = self.init_float([N, 1], 'iEff')
             iChem = self.init_float([N, 1], 'iChem')
+            iGap = self.init_float([N, 1], 'iChem')
 
             # synaptics connection
             conn = np.ones([N, N], dtype='float32') - np.diag(np.ones(N, dtype='float32'))
@@ -500,8 +503,8 @@ class TfSingleNet:
             wGap_init = (np.random.random_sample([N, N]).astype(np.float32) * (1 - 0.001) + 0.001) * g0
             wII_init = np.ones([N, N], dtype=np.float32) * 700 / (nbOfGaps**0.5) / 0.25
 
-            wGap = tf.Variable(wGap_init)
-            WII = tf.Variable(wII_init)
+            wGap = tf.Variable(wGap_init*conn)
+            WII = tf.constant(wII_init*conn)
 
             A_LTD =  2.45e-5 * self.FACT * 400 / N
             A_LTP = self.ratio * A_LTD
@@ -545,6 +548,7 @@ class TfSingleNet:
                 vv_ = tf.to_float(tf.greater(v_, 25.0))
                 # reset
                 v_ = tf.mul(vv_, -40.0) + tf.mul((1 - vv_), v_)
+
                 u_ = u_ + tf.mul(vv_, (50.0))
 
             # bursting
@@ -554,11 +558,12 @@ class TfSingleNet:
 
             # plasticity
             with tf.name_scope('plasticity'):
-                A = tf.matmul(p_, tf.ones([1, N]))
+                A = tf.matmul(p_, tf.ones([1, N])) # bursts
+                B = tf.matmul(vv_, tf.ones([1, N])) # spikes
+
                 dwLTD_ = A_LTD * (A + tf.transpose(A))
-                B = tf.matmul(vv_, tf.ones([1, N]))
-                # change g0 by 7
-                dwLTP_ = A_LTP * (tf.mul( wGap, B + tf.transpose(B)))
+                dwLTP_ = A_LTP * (B + tf.transpose(B))
+
                 dwGap_ = dt * (dwLTP_ - dwLTD_) * tf.cast((sim_index > self.startPlast), tf.float32)
                 wGap_ = tf.clip_by_value(wGap + dwGap_, clip_value_min=0, clip_value_max=10 ** 10)
 
@@ -582,7 +587,9 @@ class TfSingleNet:
                 vv.assign(vv_),
 
                 iBack.assign(iBack_),
-                iEff.assign(iEff_),
+                # iEff.assign(iEff_),
+                
+                
                 LowSp.assign(LowSp_),
 
                 vmean.assign(vmean_),
@@ -591,7 +598,9 @@ class TfSingleNet:
                 vvmean.assign(vvmean_),
                 pmean.assign(pmean_),
                 # p.assign(p_),
-                iEffm.assign(tf.reduce_mean(iEff_))
+                iEffm.assign(tf.reduce_mean(iEff_)),
+                iGapm.assign(tf.reduce_mean(iGap_)),
+                iChemm.assign(tf.reduce_mean(iChem_)),
             )
 
             plast = tf.group(
@@ -601,14 +610,17 @@ class TfSingleNet:
 
         self.sess.run(tf.initialize_all_variables())
         if 1:
-            self.vm = []
-            self.um = []
-            self.vvm = []
-            self.bursts = []
-            self.im = []
-            self.gamma = []
-            self.iEff = []
-            self.lowsp = []
+            self.vm = np.empty(T)
+            self.um = np.empty(T)
+            self.vvm = np.empty(T)
+            self.bursts = np.empty(T)
+            self.im = np.empty(T)
+            self.gamma = np.empty(T)
+            self.iEff = np.empty(T)
+            self.iGap = np.empty(T)
+            self.iChem = np.empty(T)
+            self.lowsp = np.empty((T,N))
+
             t0 = time.time()
             for i in range(T):
                 # Step simulation
@@ -627,14 +639,18 @@ class TfSingleNet:
                     if self.disp:
                         clear_output(wait=True)
                         self.DisplayArray(wGap.eval(), rng=[0, 1.5 * g0], text="%.2f ms" % (i * 0.25))
-                    # self.vm.append(vmean.eval())
-                    self.vvm.append(vvmean.eval())
-                    # self.um.append(umean.eval())
-                    self.im.append(imean.eval())
-                    # self.iEff.append(iEffm.eval())
-                    self.gamma.append(gammamean.eval() * (nbOfGaps**0.5))
-                    self.bursts.append(pmean.eval())
-                    self.lowsp.append(LowSp.eval())
+                    self.vm[i] = vmean.eval()
+                    self.vvm[i] = (vvmean.eval())
+                    self.um[i] = (umean.eval())
+                    self.im[i] = (imean.eval())
+                    
+                    self.iEff[i] = (iEffm.eval())
+                    self.iGap[i] = (iGapm.eval())
+                    self.iChem[i] = (iChemm.eval())
+                    
+                    self.gamma[i] = (gammamean.eval() * (nbOfGaps**0.5))
+                    self.bursts[i] = (pmean.eval())
+                    self.lowsp[i] = LowSp.eval().reshape(N)
 
             self.raster = self.spikes.eval()
             self.burstingActivity = np.mean(self.bursts)
@@ -975,7 +991,7 @@ class TfConnEvolveNet:
     # DEVICE = '/gpu:0'
 
     def __init__(self, N=400, T=400, disp=False, spikeMonitor=False, input=None, tauv=15,
-                 sG=10, device='/gpu:0', both=False, NUM_CORES=1, g0=7, startPlast=500, nu=0):
+                 sG=10, device='/gpu:0', both=False, NUM_CORES=1, g0=7, startPlast=500, nu=0, memfraction=1):
         tf.reset_default_graph()
         self.N = N
         self.T = T
@@ -993,11 +1009,14 @@ class TfConnEvolveNet:
         self.showProgress = False
         self.connectTime = 0
         self.FACT = 10
+        self.ratio = 1
         self.nu = nu
         self.sess = tf.InteractiveSession(config=tf.ConfigProto(
             inter_op_parallelism_threads=NUM_CORES,
             intra_op_parallelism_threads=NUM_CORES,
-            device_count={'GPU': (device[:4]=='/gpu')*1})
+            device_count={'GPU': (device[:4]=='/gpu')*1},
+            gpu_options = tf.GPUOptions(per_process_gpu_memory_fraction=memfraction)
+        )
         )
         if input is None:
             self.input = np.ones((T,1), dtype='int32')
@@ -1118,12 +1137,18 @@ class TfConnEvolveNet:
             input = tf.cast(tf.constant(self.input), tf.float32)
 
             if self.initWGap==True:
-                g_1 = getGSteady(15, 5, 1000)
+                try:
+                    g_1 = getGSteady(15, self.nu, 1000)*2
+                except:
+                    g_1 = 10
                 g0_1 = g_1 / (np.sum(conn1)**0.5) * 2
                 wGap_init_1 = (np.random.random_sample([N, N]).astype(np.float32) * (1 - 0.001) + 0.001) * g0_1
                 wGap_init_1 *= conn1
 
-                g_2 = getGSteady(self.tauv, 5, 1000)
+                try:
+                    g_2 = getGSteady(self.tauv, self.nu, 1000)*2
+                except:
+                    g_2 = 10
                 g0_2 = g_2 / (np.sum(conn2)**0.5) * 2
                 wGap_init_2 = (np.random.random_sample([N, N]).astype(np.float32) * (1 - 0.001) + 0.001) * g0_2
                 wGap_init_2 *= conn2
@@ -1157,21 +1182,20 @@ class TfConnEvolveNet:
                 g0 = self.g / (N/2)
                 wGap_init = (np.random.random_sample([N, N]).astype(np.float32)*(1-0.001)+0.001) * g0
                 wGap_init *= conn
+                wGap_init0 = wGap_init
+                wGap_init_S = wGap_init
 
-            gmean_init = np.mean(wGap_init)
+            # gmean_init = np.mean(wGap_init)
             wII_init = np.ones([N, N], dtype=np.float32) * 700 / (np.sum(conn1)**0.5) / 0.25
 
             wGap = tf.Variable(wGap_init0)
-            wGap0 = tf.constant(wGap_init0)
+            # wGap0 = tf.constant(wGap_init0)
             wGapS = tf.constant(wGap_init_S)
             WII = tf.Variable(wII_init * conn)
             zer = tf.constant(np.zeros([N, N], dtype='float32'))
 
-
-            FACT = self.FACT
-            ratio = 15
-            A_LTD = 1e-0 * 4.7e-6 * FACT * 400 / (np.sum(conn1)**0.5)
-            A_LTP = ratio * A_LTD
+            A_LTD = 2.45e-5 * self.FACT * 400 / N
+            A_LTP = self.ratio * A_LTD
 
             # stimulation
             # TImean = 100.0
@@ -1227,28 +1251,29 @@ class TfConnEvolveNet:
                 v_ = v + dt / tauvSubnet * (tf.mul((v + 60), (v + 50)) - 20 * u + 8 * I_)
                 # adaptation
                 u_ = u + dt * 0.044 * (v_ + 55 - u)
+
                 # spikes
                 vv_ = tf.to_float(tf.greater(v_, 25.0))
                 vvN1_ = tf.to_float(tf.greater(v_*subnet, 25.0))
                 vvN2_ = tf.to_float(tf.greater(v_*subnetout, 25.0))
                 # reset
                 v_ = tf.mul(vv_, -40.0) + tf.mul((1 - vv_), v_)
+
+
                 u_ = u_ + tf.mul(vv_, (50.0))
 
             # bursting
             with tf.name_scope('bursting'):
-                LowSp_ = LowSp + dt / 10.0 * (vv_ * 10.0 / dt - LowSp)
-                p = tf.to_float(tf.greater(LowSp_, 1.3))
+                LowSp_ = LowSp + dt / 8.0 * (vv_ * 8.0 / dt - LowSp)
+                p_ = tf.to_float(tf.greater(LowSp_, 1.5))
 
             # plasticity
             with tf.name_scope('plasticity'):
-                # depression
-                A = tf.matmul(p, tf.ones([1, N]))
-                dwLTD_ = A_LTD * (A + tf.transpose(A))
+                A = tf.matmul(p_, tf.ones([1, N]))  # bursts
+                B = tf.matmul(vv_, tf.ones([1, N]))  # spikes
 
-                # potentiation
-                B = tf.matmul(vv_, tf.ones([1, N]))
-                dwLTP_ = A_LTP * (tf.mul(tf.ones([N, N]) - (1 / (7/(N/2)) * wGap), B + tf.transpose(B)))
+                dwLTD_ = A_LTD * (A + tf.transpose(A))
+                dwLTP_ = A_LTP * (B + tf.transpose(B))
 
                 dwGap_ = dt * (dwLTP_ - dwLTD_) * tf.cast((sim_index > self.startPlast), tf.float32)
                 wGap_ = tf.mul(tf.clip_by_value(wgap + dwGap_, clip_value_min=0, clip_value_max=10 ** 10),
@@ -1291,7 +1316,8 @@ class TfConnEvolveNet:
                 wcontrol.assign(wcontrol_),
                 LTPcontrol.assign(LTPcontrol_),
                 LTDcontrol.assign(LTDcontrol_),
-                dwcontrol.assign(dwcontrol_)
+                dwcontrol.assign(dwcontrol_),
+
             )
 
             plast = tf.group(
@@ -1320,9 +1346,9 @@ class TfConnEvolveNet:
             for i in range(T):
                 # Step simulation
                 if i > self.startPlast or i == self.connectTime:
-                    self.sess.run([step, plast], feed_dict={dt: 0.25, tauv: self.tauv, sim_index: i})
+                    self.sess.run([step, plast], feed_dict={dt: self.dt, tauv: self.tauv, sim_index: i})
                 else:
-                    self.sess.run([step], feed_dict={dt: 0.25, tauv: self.tauv, sim_index: i})
+                    self.sess.run([step], feed_dict={dt: self.dt, tauv: self.tauv, sim_index: i})
 
                 if self.spikeMonitor:
                     # feed = {dt: 0.25, tauv: self.tauv, sim_index: i}
@@ -1330,7 +1356,7 @@ class TfConnEvolveNet:
                     self.raster.append(vv.eval())
 
                 if self.debug:
-                    self.sess.run([debug], feed_dict={dt: 0.25, tauv: self.tauv, sim_index: i})
+                    self.sess.run([debug], feed_dict={dt: self.dt, tauv: self.tauv, sim_index: i})
 
                     if i ==0:
                         self.wcontrol = []

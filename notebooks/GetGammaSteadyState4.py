@@ -6,11 +6,11 @@ from fns.functionsTFhardbound import *
 i=0
 p = Pool(nodes=56)
 params = []
-N=1000
+N = 1000
 for nu in range(0,200,10):
     for tauv in [15, 30, 45, 60, 90]:
-            for ratio in [1,3,5,10,50,100]:
-                for g in [14]:
+            for ratio in [0.2,0.5,1,2,3]:
+                for g in [10]:
                     i+=1
                     params.append([N, g, tauv, i, nu, ratio])
 
@@ -31,11 +31,11 @@ def runFn(things):
                       NUM_CORES = 1)
     # gpu.input = apple
     gpu.ratio = ratio
-    gpu.FACT = 100
+    gpu.FACT = 50
     gpu.runTFSimul()
 
 
-    filename = "../data/GetGammaSteadyState/GetSteadyState8-tauv-%d_g-%d_N-%d_T-%d_nu-%d_ratio-%d" % (tauv, g, N, T, nu, ratio)
+    filename = "../data/GetGammaSteadyState/GetSteadyState9-tauv-%d_g-%d_N-%d_T-%d_nu-%d_ratio-%.2f" % (tauv, g, N, T, nu, ratio)
     with open(filename, 'wb') as f:
         four = fourier(gpu.vvm[100:])
         np.savez(f,

@@ -237,3 +237,18 @@ def plotGrid(df, col, title='', cols=['cor1', 'cor2', 'corChange'], **kws):
     plt.subplots_adjust(top=0.9)
     g.fig.suptitle(title, fontsize='16')
     g.savefig(DIRECTORY + 'cor-plot_%s.png' % col)
+
+def find(arr,v):
+    idx = (np.abs(arr - v)).argmin()
+    return idx
+
+def convertRaster(r):
+    T = r.shape[1]
+    x,y = [],[]
+    for i in range(T):
+        yi = np.ravel(np.where(r[:,i]==1)).tolist()
+        y.append(yi)
+        x.append(np.ones(len(yi))*i)
+    x = np.concatenate(x)
+    y = np.concatenate(y)
+    return x,y
