@@ -86,6 +86,8 @@ int main(int argc, const char * argv[])
                 sim1->GammaII = atof(argv[i + 1]);
             } else if (!strcmp(argv[i], "-tq")) {
                 tau_q = atof(argv[i + 1]);
+            } else if (!strcmp(argv[i], "-ct")) {
+                sim1->connectTime = atoi(argv[i + 1]);
             } else if (!strcmp(argv[i], "-thq")) {
                 th_q = atof(argv[i + 1]);
             } else if (!strcmp(argv[i], "-plast")) {
@@ -161,8 +163,12 @@ int main(int argc, const char * argv[])
     double Vsum;
     int NbSpikesI = 0;
     int NbSpikesE = 0;
+    int NbSpikes1 = 0;
+    int NbSpikes2 = 0;
     int NewNbSpikesE = 0; // temp var to get number of spikes of Exc neurons at t-1
     int NewNbSpikesI = 0; // temp var to get number of spikes of Inh neurons at t-1
+    int NewNbSpikes1 = 0; // temp var to get number of spikes of Inh neurons at t-1
+    int NewNbSpikes2 = 0; // temp var to get number of spikes of Inh neurons at t-1
     bool* vv = new bool[N]{false};
     vector<int> spikes_idx;
     vector<int> spikes_idy;
@@ -312,8 +318,8 @@ int main(int argc, const char * argv[])
                 for (int n=0; n<sim1->NI; n++) {
 //                    plast.VgapLocal[m][n] *=  (int(m/sim1->sim1->nbInClusters)==int((n)/sim1->nbInClusters));
 //                    plast.WIILocal[m][n] *=  (int(m/sim1->nbInClusters)==int((n)/sim1->nbInClusters));
-                    plast.WIILocal[m][n] *= plast.allowedConnections[m][n] ;
-                    plast.VgapLocal[m][n] *= plast.allowedConnections[m][n] ;
+                    plast.WIILocal[m][n] *= plast.allowedConnections0[m][n] ;
+                    plast.VgapLocal[m][n] *= plast.allowedConnections0[m][n] ;
                     }
                 }
             }
@@ -381,6 +387,8 @@ int main(int argc, const char * argv[])
         Vsum = getSum(v, sim1->NI);
         NewNbSpikesI = 0;
         NewNbSpikesE = 0;
+        NewNbSpikes1 = 0;
+        NewNbSpikes2 = 0;
         //
         /***************************************************
          * NEURON LOOP
@@ -659,6 +667,12 @@ int main(int argc, const char * argv[])
                  ***************************************************/
                 if(vv[i]) {
                     NewNbSpikesE++;
+                    if (i<sim1->nbInClusters-sim1->sharedG) {
+                        NewNbSpikes1++;
+                    } else if (i>=sim1->nbInClusters+sim1->sharedG) {
+                        NewNbSpikes2++;
+                    }
+
                     v[i] = -50;
                     u[i] = u[i] + 100;
                     if ( !sim1->CONSOLE and sim1->SPIKES and  sim1->saveTime(t))
@@ -684,6 +698,8 @@ int main(int argc, const char * argv[])
 
         NbSpikesI = NewNbSpikesI;
         NbSpikesE = NewNbSpikesE;
+        NbSpikes1 = NewNbSpikes1;
+        NbSpikes2 = NewNbSpikes2;
 
         meanBurst += getAvg<double>(p, sim1->NI);
         meanBurst1 += getAvg<double>(p, int((sim1->NI-sim1->sharedG)/2));
@@ -792,7 +808,9 @@ int main(int argc, const char * argv[])
         pl(sim1->DEBUG and t<3, __LINE__);
         if (!sim1->CONSOLE) {
             ssp.push_back(NbSpikesI+NbSpikesE);
-            ssp1.push_back(NbSpikesE);
+//            ssp1.push_back(NbSpikesE);
+            ssp1.push_back(NbSpikes1);
+            ssp2.push_back(NbSpikes2);
 //            if (t < sim1->T1 + sim1->after and t > sim1->T1 - sim1->before){
 //                current1.push_back( getAvg(I, N) );
 //                ssp1.push_back(NbSpikes);ma
@@ -817,35 +835,40 @@ int main(int argc, const char * argv[])
     if (!sim1->CONSOLE) {
         time (&endtime);
         double dif = difftime (endtime,starttime);
-//        cout << "*****************************" << endl;
-//        printf ("Elasped time is %.2lf seconds.", dif );
-//        cout << " End of simulation: " << endl;
+        cout << "*****************************" << endl;
+        printf ("Elasped time is %.2lf seconds.", dif );
+        cout << " End of simulation: " << endl;
     }
 
 
 
     // SAVE DATA
     //
+    pl(sim1->DEBUG, __LINE__);
     if (!sim1->CONSOLE and !sim1->RESONANCE) {
 //    if (1) {
         // SAVE DATA NORMAL MODE
         //
+        pl(sim1->DEBUG, __LINE__);
+        cout << "*****************************" << endl;
         util.writedata("gamma", mvgamma.outputVec);
         util.writedata("gammaN1", mvgammaN1.outputVec);
         util.writedata("gammaN2", mvgammaN2.outputVec);
-//        cout <<"wirtestuff" << mvgammaN2.outputVec[300]<< endl;
+
         util.writedata("gammaNshared", mvgammaNshared.outputVec);
 
         util.writedata("stimulation", stimulation);
-        util.writedata("correlation", corrVect);
+//        util.writedata("correlation", corrVect);
         util.writedata("p", pm);
         util.writedata("q", qm);
         util.writedata("LowSp", lm);
         util.writedata("spike_x", spikes_idx);
         util.writedata("spike_y", spikes_idy);
-//        util.writedata("spike_x_tc", spikes_idx_tc);
-//        util.writedata("spike_y_tc", spikes_idy_tc);
+
         util.writedata("ssp", ssp);
+        util.writedata("ssp1", ssp1);
+        util.writedata("ssp2", ssp2);
+
         util.writedata("v", voltage);
         util.writedata("u", adaptation);
 
@@ -854,9 +877,6 @@ int main(int argc, const char * argv[])
             util.writedata("current2", current2);
         }
 
-
-//        util.writedata("resonance", abs(res_val));
-        //cout << "resonance: " <<  abs(res_val) << "\t" << abs(res_val)/T/N/dt << endl;
         if (sim1->FOURIER) {
             util.writedata("vm", vm);
             util.writedata("vm1", vm1);
@@ -864,18 +884,10 @@ int main(int argc, const char * argv[])
 //            util.writedata("freq", FFT.freq);
 //            util.writedata("amp", FFT.amp);
         }
-        
 
 //        util.writedata("current3", current3);
-        
-        util.writedata("sspE", ssp1);
-//        util.writedata("ssp2", ssp2);
-//        util.writedata("ssp3", ssp3);
-        
-//        util.writedata("RON_I", RON_I);
-//        util.writedata("RON_V", RON_V);
-//        util.writedata("V", vVect);
 
+        util.writedata("sspE", ssp1);
         //cout << " Data written in  " << util.sim.path << endl;
 
         if (sim1->GLOB) {
@@ -888,6 +900,7 @@ int main(int argc, const char * argv[])
         }
     }
     else if (sim1->CONSOLE) {
+        pl(sim1->DEBUG, __LINE__);
         // SAVE DATA CONSOLE MODE
         //
         if (sim1->FOURIER) {
@@ -897,7 +910,7 @@ int main(int argc, const char * argv[])
             FFT1.computeFFT(vm1);
             FFT2.computeFFT(vm2);
         }
-        
+
         double resultCorr = correlation.computeCorrelation(spikeTimesCor, dt);
         string path_csv =  sim1->csv_path + namecsv + ".csv";
 	//cout << path_csv << endl;
@@ -915,13 +928,13 @@ int main(int argc, const char * argv[])
             	<< ";" << FFT2.fftFreq <<";" << FFT2.fftPower\
             	<< ";" << sim1->sharedG << ";" << sim1->sharedWII << ";" << sim1->tauv << endl;
     }
-    if (sim1->RESONANCE) {
-        string path_csv =  sim1->root+sim1->computer+sim1->directory+"resonance.csv";
-        ofstream csvFile(path_csv, std::ofstream::out | std::ofstream::app);
-        csvFile << sim1->model<< ";" << f << ";" << sim1->stimulation+50.0 << ";" << abs(res_val) << ";" << endl;
-        //cout << "Data written: " << f<< "\t" << abs(res_val) << endl ;
-
-    }
+//    if (sim1->RESONANCE) {
+//        string path_csv =  sim1->root+sim1->computer+sim1->directory+"resonance.csv";
+//        ofstream csvFile(path_csv, std::ofstream::out | std::ofstream::app);
+//        csvFile << sim1->model<< ";" << f << ";" << sim1->stimulation+50.0 << ";" << abs(res_val) << ";" << endl;
+//        //cout << "Data written: " << f<< "\t" << abs(res_val) << endl ;
+//
+//    }
     
     
     return 0;

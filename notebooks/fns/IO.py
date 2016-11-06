@@ -62,27 +62,27 @@ class IO(object):
     # def check_connection(self):
     #     print('Number of workers: %d' % len(c.ids))
 
-    def runPSTH(self, it=8):
-        Parallel(n_jobs=num_cores)(delayed(self.runSimulation)(i) for i in range(it))
-
-    def readPSTH(self, it,
-                 binsize, coeff, RON='izh', tau_m=10):
-        gr = GRAPH()
-        listSSP1 = Parallel(n_jobs=num_cores)(delayed(self.readSimulationSSP1)(i) for i in range(it))
-        if RON == 'izh':
-            listS = Parallel(n_jobs=num_cores)(delayed(gr.readoutSpikes)(ssp1, coeff, tau_m) for ssp1 in listSSP1)
-        else:
-            listS = Parallel(n_jobs=num_cores)(delayed(gr.readoutSpikesIAF)(ssp1, coeff, tau_m) for ssp1 in listSSP1)
-
-        tot = np.sum(listS, axis=0)
-        totSSP1 = np.sum(listSSP1, axis=0)
-        total = np.sum(listS)
-        h = self.getHist(tot, binsize)
-        hSSP1 = self.getHist(totSSP1, binsize)
-        spikes_x, spikes_y, spikes_x_tc, spikes_y_tc, gamma, correlation, ssp1, stimulation, p, q, lowsp, vm = self.readSimulation(
-            0)
-
-        return h, stimulation, total, hSSP1, totSSP1
+    # def runPSTH(self, it=8):
+    #     Parallel(n_jobs=num_cores)(delayed(self.runSimulation)(i) for i in range(it))
+    #
+    # def readPSTH(self, it,
+    #              binsize, coeff, RON='izh', tau_m=10):
+    #     gr = GRAPH()
+    #     listSSP1 = Parallel(n_jobs=num_cores)(delayed(self.readSimulationSSP1)(i) for i in range(it))
+    #     if RON == 'izh':
+    #         listS = Parallel(n_jobs=num_cores)(delayed(gr.readoutSpikes)(ssp1, coeff, tau_m) for ssp1 in listSSP1)
+    #     else:
+    #         listS = Parallel(n_jobs=num_cores)(delayed(gr.readoutSpikesIAF)(ssp1, coeff, tau_m) for ssp1 in listSSP1)
+    #
+    #     tot = np.sum(listS, axis=0)
+    #     totSSP1 = np.sum(listSSP1, axis=0)
+    #     total = np.sum(listS)
+    #     h = self.getHist(tot, binsize)
+    #     hSSP1 = self.getHist(totSSP1, binsize)
+    #     spikes_x, spikes_y, spikes_x_tc, spikes_y_tc, gamma, correlation, ssp1, stimulation, p, q, lowsp, vm = self.readSimulation(
+    #         0)
+    #
+    #     return h, stimulation, total, hSSP1, totSSP1
 
     def runSimulation(self, i=0, tauv=None):
         ext = "_%d.txt" % i
@@ -101,19 +101,19 @@ class IO(object):
         print(' '.join(commandStr))
         subprocess.check_output(commandStr)
 
-    def readSimulationSSP1(self, i=0):
-
-        DIRECTORY = self.data_path
-        ext = "_%d.txt" % i
-        # compute the paths of data files.
-        extension = \
-            "_g-%.6g_TImean-%d_T-%d_Glob-%d_dt-0.25_N-%d_r-%.2g_S-%d_WII-%d_LTD-%.6g_LTP-%.6g_model-%s_sG-%d_sWII-%d_tauv-%d_both-%d_plast_%d" \
-                    % (self.g, self.TImean, self.T, self.glob, self.N, self.r, self.S, self.WII, self.LTD, self.LTP,
-                       self.model, self.sG, self.sWII, self.tauv, self.BOTH+1, self.plast)
-        extension += ext
-        ssp1_p = DIRECTORY + "sspE" + extension
-        ssp1 = np.fromfile(ssp1_p, dtype='double', count=-1, sep=" ")
-        return ssp1
+    # def readSimulationSSP1(self, i=0):
+    #
+    #     DIRECTORY = self.data_path
+    #     ext = "_%d.txt" % i
+    #     # compute the paths of data files.
+    #     extension = \
+    #         "_g-%.6g_TImean-%d_T-%d_Glob-%d_dt-0.25_N-%d_r-%.2g_S-%d_WII-%d_LTD-%.6g_LTP-%.6g_model-%s_sG-%d_sWII-%d_tauv-%d_both-%d_plast_%d" \
+    #                 % (self.g, self.TImean, self.T, self.glob, self.N, self.r, self.S, self.WII, self.LTD, self.LTP,
+    #                    self.model, self.sG, self.sWII, self.tauv, self.BOTH+1, self.plast)
+    #     extension += ext
+    #     ssp1_p = DIRECTORY + "sspE" + extension
+    #     ssp1 = np.fromfile(ssp1_p, dtype='double', count=-1, sep=" ")
+    #     return ssp1
 
     def readMatrix(self, i=0, type="GAP", extension=None, workstation=False):
 
@@ -256,6 +256,13 @@ class IO(object):
         else:
             return data
 
+    def readfn(self, directory, ext, dtype, name):
+        path_x = directory + name + ext
+        try:
+            return np.fromfile(path_x, dtype=dtype, count=-1, sep=" ")
+        except:
+            print('can\'t find:\t ' + name + '\t' + path_x)
+
     def readSimulation(self, i=0, workstation=False):
 
         T = self.d1 + self.d2 + self.d3
@@ -273,63 +280,27 @@ class IO(object):
                        self.sG, self.sWII, self.tauv, self.BOTH*1, self.plast*1)
         extension += ext
 
-        path_x = DIRECTORY + "spike_x" + extension
-        path_x_tc = DIRECTORY + "spike_x_tc" + extension
-        path_y = DIRECTORY + "spike_y" + extension
-        path_y_tc = DIRECTORY + "spike_y_tc" + extension
-        path_g = DIRECTORY + "gamma" + extension
-        path_gN1 = DIRECTORY + "gammaN1" + extension
-        path_gN2 = DIRECTORY + "gammaN2" + extension
-        path_c = DIRECTORY + "correlation" + extension
-        ssp1_p = DIRECTORY + "sspE" + extension
-        p_p = DIRECTORY + "p" + extension
-        q_p = DIRECTORY + "q" + extension
-        lowsp_p = DIRECTORY + "LowSp" + extension
-        vm_p = DIRECTORY + "vm" + extension
-        i1_p = DIRECTORY + "current1" + extension
-        i2_p = DIRECTORY + "current2" + extension
-        v_p = DIRECTORY + "v" + extension
-        u_p = DIRECTORY + "u" + extension
+        self.spikes_x = self.readfn(DIRECTORY, extension, 'uint', 'spike_x')
+        self.spikes_y = self.readfn(DIRECTORY, extension, 'uint', 'spike_y')
+        self.gamma = self.readfn(DIRECTORY, extension, 'double', 'gamma')
+        self.ssp1 = self.readfn(DIRECTORY, extension, 'double', 'ssp1')
+        self.ssp2 = self.readfn(DIRECTORY, extension, 'double', 'ssp2')
+        self.p = self.readfn(DIRECTORY, extension, 'double', 'p')
+        self.q = self.readfn(DIRECTORY, extension, 'double', 'q')
+        self.LowSp = self.readfn(DIRECTORY, extension, 'double', 'LowSp')
+        self.vm = self.readfn(DIRECTORY, extension, 'double', 'v')
+        self.um = self.readfn(DIRECTORY, extension, 'double', 'u')
+        if self.with_currents:
+            self.i1 = self.readfn(DIRECTORY, extension, 'double', 'current1')
+            self.i2 = self.readfn(DIRECTORY, extension, 'double', 'current2')
+        # self.stimulation = np.fromfile(stimulation_p, dtype='double', count=-1, sep=" ")
 
-        # RON_I_p = DIRECTORY +"RON_I"+ extension
-        # RON_V_p = DIRECTORY +"RON_V"+ extension
-        # V_p = DIRECTORY +"V"+ extension
+        self.gammaN1 = self.readfn(DIRECTORY, extension, 'double', 'gammaN1')
+        self.gammaN2 = self.readfn(DIRECTORY, extension, 'double', 'gammaN2')
 
-        stimulation_p = DIRECTORY + "stimulation" + extension
-        #     print path_g
-
-        try:
-            self.spikes_x = np.fromfile(path_x, dtype='uint', count=-1, sep=" ")
-            # self.spikes_x_tc = np.fromfile(path_x_tc, dtype='uint', count=-1, sep=" ")
-            self.spikes_y = np.fromfile(path_y, dtype='uint', count=-1, sep=" ")
-            # self.spikes_y_tc = np.fromfile(path_y_tc, dtype='uint', count=-1, sep=" ")
-            self.gamma = np.fromfile(path_g, dtype='double', count=-1, sep=" ")
-            self.correlation = np.fromfile(path_c, dtype='double', count=-1, sep=" ")
-            self.ssp1 = np.fromfile(ssp1_p, dtype='double', count=-1, sep=" ")
-            self.p = np.fromfile(p_p, dtype='double', count=-1, sep=" ")
-            self.q = np.fromfile(q_p, dtype='double', count=-1, sep=" ")
-            self.LowSp = np.fromfile(lowsp_p, dtype='double', count=-1, sep=" ")
-            self.vm = np.fromfile(vm_p, dtype='double', count=-1, sep=" ")
-            if self.with_currents:
-                self.i1 = np.fromfile(i1_p, dtype='double', count=-1, sep=" ")
-                self.i2 = np.fromfile(i2_p, dtype='double', count=-1, sep=" ")
-            self.stimulation = np.fromfile(stimulation_p, dtype='double', count=-1, sep=" ")
-
-        except:
-            print('can\'t find:\t ' + path_g)
-
-        try:
-            self.gammaN1 = np.fromfile(path_gN1, dtype='double', count=-1, sep=" ")
-            self.gammaN2 = np.fromfile(path_gN2, dtype='double', count=-1, sep=" ")
-        except:
-            pass
-
-        # try:
-        self.voltage = np.fromfile(v_p, dtype='double', count=-1, sep=" ")
-        self.adaptation = np.fromfile(u_p, dtype='double', count=-1, sep=" ")
-        # except:
-        #     pass
-
+        self.voltage = self.readfn(DIRECTORY, extension, 'double', 'v')
+        self.adaptation = self.readfn(DIRECTORY, extension, 'double', 'u')
+       
         return 0
 
 

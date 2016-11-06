@@ -31,9 +31,11 @@ void Simulation::initData() {
     LTD = 0;
     LTP = 0;
 
-    dt = 0.25;
+//    dt = 0.25;
+    dt = 0.1;
 //    dt = 1.00;
     T = 1000 / dt;
+    connectTime = 10000;
     before = T;
     after = T;
     d1 = T;
@@ -61,12 +63,12 @@ void Simulation::initData() {
         if(!strcmp(hostname,"dyn1147-170.insecure.ic.ac.uk") or !strcmp(hostname,"ip-static-94-242-199-231.server.lu") or (1==1) ){
             root = "/Users/";
             computer = "GP1514";
-            directory = "/Dropbox/ICL-2014/Code/C-Code/cortex/data/";
+            directory = "/Dropbox/ICL-2014/Code/C-Code/cortex/data/newdata/";
         }
         else if (!strcmp(hostname,"CNL-Brain1")){
             root = "/mnt/DATA/";
             computer = "gp1514";
-            directory = "/Projects/github/cortex/data/";
+            directory = "/Projects/github/cortex/data/newdata/";
         }
         else {
             root = "/Users/";
@@ -77,12 +79,12 @@ void Simulation::initData() {
         if (!strcmp(hostname,"CNL-Brain1")){
                 root = "/mnt/DATA/";
                 computer = "gp1514";
-                directory = "/Projects/github/cortex/data/";
+                directory = "/Projects/github/cortex/data/newdata/";
         }
         else {
             root = "/home/";
             computer = "gp1514";
-            directory = "/Projects/github/cortex/data/";
+            directory = "/Projects/github/cortex/data/newdata/";
         }
 
     #endif
@@ -143,16 +145,16 @@ void Plasticity::initData() {
     // params for plast
 //    cout << std::string(100, '*')<< endl;
 //    cout <<  "Init plasticity "<< endl;
-    FACT = 6 * 500.0;
-    tau_lowsp = 10.0;
+    FACT = 400.0;
+    tau_lowsp = 8.0;
     tau_q = 1.3;
-    A_gapD = 1.569e-5 * FACT;
-    th_lowsp = 1.3;
-    th_q = 1.3;
+    A_gapD = 2.45e-5 * FACT;
+    th_lowsp = 1.5;
+    th_q = 1.5;
 //    th_lowsp = 2.0;
 //    th_q = 2.0; // threshold to differentiate between bursts and spikes
-    A_gapP = A_gapD * 0.6;
-    A_gapP = A_gapD * 0.05;
+//    A_gapP = A_gapD * 0.6;
+//    A_gapP = A_gapD * 0.05;
     A_gapP = A_gapD * 0.5;
 
     initConnections();
@@ -198,14 +200,18 @@ void Plasticity::initData() {
  *****************************************************************************/
 void Plasticity::initConnections() {
     allowedConnections = new double *[sim.NI];
+    allowedConnections0 = new double *[sim.NI];
 //    VgapIN = sim.gamma_c / sim.NI;
     for (int i = 0; i < sim.NI; ++i) {
         allowedConnections[i] = new double[sim.NI];
+        allowedConnections0[i] = new double[sim.NI];
     }
     for (int m = 0; m < sim.NI; ++m) {
         for (int n = 0; n < sim.NI; ++n) {
             allowedConnections[m][n] = (bool(m<(sim.nbInClusters+sim.sharedG) and n<(sim.nbInClusters+sim.sharedG))
                                         or bool((m>=(sim.nbInClusters-sim.sharedG) )and (n>=(sim.nbInClusters-sim.sharedG)))) and (m!=n);
+            allowedConnections0[m][n] = (bool(m<(sim.nbInClusters-sim.sharedG) and n<(sim.nbInClusters-sim.sharedG))
+                                        or bool((m>=(sim.nbInClusters+sim.sharedG) )and (n>=(sim.nbInClusters+sim.sharedG)))) and (m!=n);
         }
     }
 }
@@ -240,14 +246,17 @@ void Plasticity::plasticityLocal(double *burstTh, bool *topotentiate, int t) {
         for (int i = 0; i < sim.NI; i++) {
             for (int j = 0; j < i; j++) {
                 // TYPO: no VgapIN as factor?
-                dG = (i != j) * (VgapIN * sim.dt * (-A_gapD * burstTh[i] +
-                                                    A_gapP * (VgapIN - VgapLocal[i][j]) / VgapIN * (topotentiate[i]*1.0)));
-                VgapLocal[i][j] = max(0.0, VgapLocal[i][j] + 2 * dG) * allowedConnections[i][j];
+                dG = (i != j) * ( sim.dt * (-A_gapD * burstTh[i] +
+                                                    A_gapP * (topotentiate[i]*1.0)));
+
+                if (t * sim.dt > sim.connectTime) {
+                    VgapLocal[i][j] = max(0.0, VgapLocal[i][j] + 2 * dG) * allowedConnections[i][j];
+                } else {
+                    VgapLocal[i][j] = max(0.0, VgapLocal[i][j] + 2 * dG) * allowedConnections0[i][j];
+                }
                 VgapLocal[j][i] = VgapLocal[i][j];
-//                instantMeanG += VgapLocal[i][j];
             }
         }
-//        instantMeanG /= (sim.NI * (sim.NI - 1) / 2);
     }
 }
 
@@ -352,15 +361,12 @@ double Corr::correlation(deque<int> list1, deque<int> list2, double dt, double s
                 }
             }
             upper = lower + 1;
-            //            iter upper = std::lower_bound(list2.end()-40, list2.end()-1, list1[i]);
-            //            iter lower = upper-1;
 
             double d1 = abs(list1[i] - list2[lower]);
             double d2 = abs(list1[i] - list2[upper]);
             double distance = min(d1, d2);
             double val = exp(-pow(distance * dt, 2.0) / (2 * pow(sig, 2)));
             res += val;
-            //            cout <<list1[i] << "\t" << *lower << "\t" <<*upper  << "\t" << distance<< "\t" << val <<endl;
         }
         res /= list1.size();
     }
@@ -370,13 +376,9 @@ double Corr::correlation(deque<int> list1, deque<int> list2, double dt, double s
 
 double Corr::avgCorrelation(int N1, int N2, deque<int> *spikeTimesCor, double sig, double dt) {
     double t = 0;
-    //    #pragma omp parallel for num_threads(NUM_THREADS)
     for (int i = N1; i < N2 - 1; i++) {
-        //        t+= correlationPairwise(spikeTimesCor[i], spikeTimesCor[i+1], sig);
         t += correlation(spikeTimesCor[i], spikeTimesCor[i + 1], dt, sig);
-        //        for(int j=N1; j<N2-1; j++ ){
-        //            if (j!= i) t += correlation(spikeTimesCor[i], spikeTimesCor[j], dt, sig);
-        //        }
+
     }
     return t / pow((N2 - N1), 2);
 }
@@ -430,38 +432,3 @@ void pl(bool CONSOLE, int line) {
         cout << line << endl;
     }
 }
-
-
-
-//vector<double> kernel_g( double sig, double dt) {
-//    vector<double> gaussian_kernel;
-//    double factor = 1/sqrt(2*M_PI*pow(sig,2));
-//    factor = 1;
-//    double kernel_size = int(2 * sig/dt);
-//    double fx = 0;
-//    for( int i =0; i<int(kernel_size); i++) {
-//        fx = factor *  exp( -pow( i-kernel_size/2.0, 2.0) / (2* pow(sig,2)) );
-//        gaussian_kernel.push_back( fx );
-//        cout << i << " " << "gaussian\t"   << fx << endl;
-//    }
-//    return gaussian_kernel;
-//}
-
-//vector<double> convolution (vector<double> list, vector<double> kernel, double time_length, double dt){
-//    vector<double> res_c = {0};
-//    double convol[2000] = {0};
-//    for(int i =0; i< list.size(); i++){
-//    }
-//}
-
-//// FFT
-//int NN;
-//fftw_complex *in, *out;
-//fftw_plan my_plan;
-//in = (fftw_complex*) fftw_malloc(sizeof(fftw_complex)*NN);
-//out = (fftw_complex*) fftw_malloc(sizeof(fftw_complex)*NN);
-//my_plan = fftw_plan_dft_1d(N, in, out, FFTW_FORWARD, FFTW_ESTIMATE);
-//fftw_execute(my_plan);
-//fftw_destroy_plan(my_plan);
-//fftw_free(in);
-//fftw_free(out);

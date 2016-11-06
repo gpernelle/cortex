@@ -4,7 +4,7 @@ from pathos.multiprocessing import ProcessingPool as Pool
 from pathos.multiprocessing import ThreadingPool as tPool
 import matplotlib
 import numpy as np
-matplotlib.use('nbagg')
+matplotlib.use('Agg')
 from scipy.optimize import curve_fit
 
 from numba import autojit

@@ -47,6 +47,7 @@ public:
     int NI;
     int NE;
     int stimulation;
+    int connectTime;
     int sharedWII;
     int sharedG;
     int sharedGTemp;
@@ -200,6 +201,7 @@ public:
 
     double** VgapLocal;
     double** allowedConnections;
+    double** allowedConnections0;
     double** WIILocal;
 
     // Synaptic weights

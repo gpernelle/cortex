@@ -96,7 +96,7 @@ def getGSteady(tauv, k, N=100):
 #             tauv = tf.placeholder(tf.float32, shape=(), name='tauv')
 #             sim_index = tf.placeholder(tf.int32, shape=(), name='sim_index')
 #
-#             scaling = 1 / (1 / (2 * 2 / 0.25)) ** 0.5 * 70
+#             scaling = 1 / (1 / (2 * 2 / self.dt)) ** 0.5 * 70
 #
 #             # Create variables for simulation state
 #             u =self.init_float([N, 1], 'u')
@@ -184,7 +184,7 @@ def getGSteady(tauv, k, N=100):
 #                 wGap_init *= conn
 #
 #             gmean_init = np.mean(wGap_init)
-#             wII_init = np.ones([N, N], dtype=np.float32) * 500 / N / 0.25
+#             wII_init = np.ones([N, N], dtype=np.float32) * 500 / N / self.dt
 #
 #             wGap = tf.Variable(wGap_init)
 #             WII = tf.Variable(wII_init * conn)
@@ -337,12 +337,12 @@ def getGSteady(tauv, k, N=100):
 #                     bar.update()
 #
 #                 if i > self.startPlast:
-#                     self.sess.run([step, plast], feed_dict={dt: 0.25, tauv: self.tauv, sim_index: i})
+#                     self.sess.run([step, plast], feed_dict={dt: self.dt, tauv: self.tauv, sim_index: i})
 #                 else:
-#                     self.sess.run([step], feed_dict={dt: 0.25, tauv: self.tauv, sim_index: i})
+#                     self.sess.run([step], feed_dict={dt: self.dt, tauv: self.tauv, sim_index: i})
 #
 #                 if self.spikeMonitor:
-#                     feed = {dt: 0.25, tauv: self.tauv, sim_index: i}
+#                     feed = {dt: self.dt, tauv: self.tauv, sim_index: i}
 #                     self.sess.run(spike_update, feed_dict=feed)
 #                 self.vvm.append(vvmean.eval())
 #                 self.vvmN1.append(vvmeanN1.eval())
@@ -356,7 +356,7 @@ def getGSteady(tauv, k, N=100):
 #                     weights = wGap.eval()
 #                     if self.disp and i % 40 == 0:
 #                         clear_output(wait=True)
-#                         self.DisplayArray(weights, rng=[0, 1.5 * gmean_init], text="%.2f ms" % (i*0.25))
+#                         self.DisplayArray(weights, rng=[0, 1.5 * gmean_init], text="%.2f ms" % (i*self.dt))
 #                     self.vm.append(vmean.eval())
 #                     self.um.append(umean.eval())
 #                     self.im.append(imean.eval())
@@ -461,11 +461,12 @@ class TfSingleNet:
         N = self.N
         T = self.T
         with tf.device(self.device):
+        #if 1:
             dt = tf.placeholder(tf.float32, shape=(), name='dt')
             tauv = tf.placeholder(tf.float32, shape=(), name='tauv')
             sim_index = tf.placeholder(tf.int32, shape=(), name='sim_index')
 
-            scaling = 1 / (1 / (2 * 2 / 0.25)) ** 0.5 * 70
+            scaling = 1 / (1 / (2 * 2 / self.dt)) ** 0.5 * 70
 
             # Create variables for simulation state
             u = self.init_float([N, 1], 'u')
@@ -492,19 +493,21 @@ class TfSingleNet:
             iGap = self.init_float([N, 1], 'iChem')
 
             # synaptics connection
-            conn = np.ones([N, N], dtype='float32') - np.diag(np.ones(N, dtype='float32'))
-            nbOfGaps = np.sum(conn)
+            conn = np.ones((N, N), dtype='float32') - np.diag(np.ones((N,), dtype='float32'))
+            nbOfGaps = N*(N-1)
 
             input = tf.cast(tf.constant(self.input), tf.float32)
 
             if self.g0fromFile:
                 self.g = getGSteady(self.tauv, 5, 1000)
             g0 = self.g / (nbOfGaps**0.5)
-            wGap_init = (np.random.random_sample([N, N]).astype(np.float32) * (1 - 0.001) + 0.001) * g0
-            wII_init = np.ones([N, N], dtype=np.float32) * 700 / (nbOfGaps**0.5) / 0.25
+            wGap_init = (tf.random_normal((N, N), mean=0.0, stddev=1.0, dtype=tf.float32,
+                                          seed=None, name=None) * (1 - 0.001) + 0.001) * g0
+            wII_init = tf.ones((N, N), dtype=tf.float32)* 700 / (nbOfGaps**0.5) / self.dt
 
-            wGap = tf.Variable(wGap_init*conn)
-            WII = tf.constant(wII_init*conn)
+            wGap = tf.Variable(tf.mul(wGap_init, conn))
+
+            WII = tf.Variable(tf.mul(wII_init, conn))
 
             A_LTD =  2.45e-5 * self.FACT * 400 / N
             A_LTP = self.ratio * A_LTD
@@ -515,13 +518,14 @@ class TfSingleNet:
 
             self.spikes = self.init_float([T, N], "spikes")
 
-            net = tf.ones([N, 1])
+            net = tf.ones((N,1))
             tauvSubnet = net * self.tauv
 
         #################################################################################
         ## Computation
         #################################################################################
         with tf.device(self.device):
+        #if 1:
             with tf.name_scope('Currents'):
                 # Discretized PDE update rules
                 iChem_ = iChem + dt / 5 * (-iChem + tf.matmul(WII, tf.to_float(vv)))
@@ -558,8 +562,8 @@ class TfSingleNet:
 
             # plasticity
             with tf.name_scope('plasticity'):
-                A = tf.matmul(p_, tf.ones([1, N])) # bursts
-                B = tf.matmul(vv_, tf.ones([1, N])) # spikes
+                A = tf.matmul(p_, tf.ones((1, N))) # bursts
+                B = tf.matmul(vv_, tf.ones((1, N))) # spikes
 
                 dwLTD_ = A_LTD * (A + tf.transpose(A))
                 dwLTP_ = A_LTP * (B + tf.transpose(B))
@@ -627,18 +631,18 @@ class TfSingleNet:
 
                 # start without plasticity until t>startPlast
                 if i < self.startPlast:
-                    self.sess.run([step], feed_dict={dt: 0.25, tauv: self.tauv, sim_index: i})
+                    self.sess.run([step], feed_dict={dt: self.dt, tauv: self.tauv, sim_index: i})
                 else:
-                    self.sess.run([step, plast], feed_dict={dt: 0.25, tauv: self.tauv, sim_index: i})
+                    self.sess.run([step, plast], feed_dict={dt: self.dt, tauv: self.tauv, sim_index: i})
 
                 if self.spikeMonitor:
-                    feed = {dt: 0.25, tauv: self.tauv, sim_index: i}
+                    feed = {dt: self.dt, tauv: self.tauv, sim_index: i}
                     self.sess.run(spike_update, feed_dict=feed)
                 # Visualize every 50 steps
                 if i % 1 == 0:
                     if self.disp:
                         clear_output(wait=True)
-                        self.DisplayArray(wGap.eval(), rng=[0, 1.5 * g0], text="%.2f ms" % (i * 0.25))
+                        self.DisplayArray(wGap.eval(), rng=[0, 1.5 * g0], text="%.2f ms" % (i * self.dt))
                     self.vm[i] = vmean.eval()
                     self.vvm[i] = (vvmean.eval())
                     self.um[i] = (umean.eval())
@@ -740,7 +744,7 @@ class TfSingleNet:
 #             tauv = tf.placeholder(tf.float32, shape=(), name='tauv')
 #             sim_index = tf.placeholder(tf.int32, shape=(), name='sim_index')
 #
-#             scaling = 1 / (1 / (2 * 2 / 0.25)) ** 0.5 * 70
+#             scaling = 1 / (1 / (2 * 2 / self.dt)) ** 0.5 * 70
 #
 #             # Create variables for simulation state
 #             u =self.init_float([N, 1], 'u')
@@ -826,7 +830,7 @@ class TfSingleNet:
 #                 wGap_init *= conn
 #
 #             gmean_init = np.mean(wGap_init)
-#             wII_init = np.ones([N, N], dtype=np.float32) * 500 / (np.sum(conn1)**0.5) / 0.25
+#             wII_init = np.ones([N, N], dtype=np.float32) * 500 / (np.sum(conn1)**0.5) / self.dt
 #
 #             wGap = tf.Variable(wGap_init)
 #             WII = tf.Variable(wII_init * (conn1 + conn2))
@@ -956,12 +960,12 @@ class TfSingleNet:
 #                 # Step simulation
 #
 #                 if i > self.startPlast:
-#                     self.sess.run([step, plast], feed_dict={dt: 0.25, tauv: self.tauv, sim_index: i})
+#                     self.sess.run([step, plast], feed_dict={dt: self.dt, tauv: self.tauv, sim_index: i})
 #                 else:
-#                     self.sess.run([step], feed_dict={dt: 0.25, tauv: self.tauv, sim_index: i})
+#                     self.sess.run([step], feed_dict={dt: self.dt, tauv: self.tauv, sim_index: i})
 #
 #                 if self.spikeMonitor:
-#                     feed = {dt: 0.25, tauv: self.tauv, sim_index: i}
+#                     feed = {dt: self.dt, tauv: self.tauv, sim_index: i}
 #                     self.sess.run(spike_update, feed_dict=feed)
 #                 self.vvm.append(vvmean.eval())
 #                 self.vvmN1.append(vvmeanN1.eval())
@@ -1063,11 +1067,12 @@ class TfConnEvolveNet:
             tauv = tf.placeholder(tf.float32, shape=(), name='tauv')
             sim_index = tf.placeholder(tf.int32, shape=(), name='sim_index')
 
-            scaling = 1 / (1 / (2 * 2 / 0.25)) ** 0.5 * 70
+            scaling = 1 / (1 / (2 * 2 / self.dt)) ** 0.5 * 70
 
             # Create variables for simulation state
-            u =self.init_float([N, 1], 'u')
-            v =self.init_float([N, 1], 'v')
+            u = self.init_float([N, 1], 'u')
+            # v = self.init_float([N, 1], 'v')
+            v = tf.Variable(tf.ones([N, 1], tf.float32)*(-70))
             ind = tf.Variable(0, dtype='float32')
 
             LowSp =self.init_float([N, 1], 'bursting')
@@ -1095,28 +1100,64 @@ class TfConnEvolveNet:
             iGap =self.init_float([N, 1], 'iGap')
             iChem =self.init_float([N, 1], 'iChem')
             # synaptics connection
-            conn = np.zeros([N, N], dtype='float32')
-            conn1 = np.zeros([N, N], dtype='float32')
-            conn2 = np.zeros([N, N], dtype='float32')
-            connS = np.zeros([N, N], dtype='float32')
-            sG = self.sG
-            nbInCluster = N//2
-            for i in range(N):
-                for j in range(N):
-                    conn[i][j] = (((i < (nbInCluster + sG)) & (j < (nbInCluster + sG))) \
-                                 or ((i >= (nbInCluster - sG)) & (j >= (nbInCluster - sG)))) and (i!=j)
-            for i in range(N):
-                for j in range(N):
+
+            sG = int(self.sG)
+            nbInCluster = int(N//2)
+
+            conn1 = np.ones([N,N])
+            conn2 = np.ones([N,N])
+            connS = np.ones([N,N])
+
+            # conn_1 = tf.ones((nbInCluster + sG, nbInCluster + sG), dtype=tf.bool)
+            # conn_1 = tf.pad(conn_1, [[0, N-(nbInCluster+sG)], [0, N-(nbInCluster+sG)]])
+            #
+            #
+            # conn_2 = tf.ones((nbInCluster + sG, nbInCluster + sG), dtype=tf.bool)
+            # conn_2 = tf.pad(conn_2, [[N - (nbInCluster + sG), 0], [N-(nbInCluster+sG), 0]])
+            #
+            # conn = tf.logical_or(conn_1, conn_2)
+            # connS = tf.logical_and(conn_1, conn_2)
+            #
+            # conn = tf.to_float(conn)
+            # connS = tf.to_float(connS)
+            #
+            # tzr = tf.ones((N, N)) - tf.diag(tf.ones(N))
+            # conn = tf.mul(conn, tzr)
+            # connS = tf.mul(connS, tzr)
+            #
+            # conn1 = tf.ones((nbInCluster - sG, nbInCluster - sG), dtype=tf.bool)
+            # conn1 = tf.pad(conn1, [[0, N - (nbInCluster - sG)], [0, N - (nbInCluster - sG)]])
+            #
+            # conn2 = tf.ones((nbInCluster - sG, nbInCluster - sG), dtype=tf.bool)
+            # conn2 = tf.pad(conn2, [[N - (nbInCluster - sG), 0], [N - (nbInCluster - sG), 0]])
+            #
+            # conn0 = tf.mul(tf.to_float(tf.logical_or(conn1, conn2)), tzr)
+            # conn1 = tf.to_float(conn1)
+            # conn2 = tf.to_float(conn2)
+            # conn1 = tf.mul(conn1, tzr)
+            # conn2 = tf.mul(conn2, tzr)
+
+
+
+
+
+
+            # for i in range(N):
+            #     for j in range(N):
+            #         conn[i][j] = (((i < (nbInCluster + sG)) & (j < (nbInCluster + sG))) \
+            #                      or ((i >= (nbInCluster - sG)) & (j >= (nbInCluster - sG)))) and (i!=j)
+            for i in range(nbInCluster-sG):
+                for j in range(nbInCluster-sG):
                     conn1[i][j] = ((i < nbInCluster-sG) and (j < nbInCluster-sG) and (i!=j))
                     # conn1 = np.float32(conn1 != 0)
 
-            for i in range(N):
-                for j in range(N):
+            for i in range(nbInCluster+sG,N):
+                for j in range(nbInCluster+sG,N):
                     conn2[i][j] = ((i > nbInCluster+sG) and (j > nbInCluster+sG) and (i!=j))
                     # conn2 = np.float32(conn2 != 0)
 
-            for i in range(N):
-                for j in range(N):
+            for i in range(nbInCluster-sG, nbInCluster+sG):
+                for j in range(nbInCluster-sG, nbInCluster+sG):
                     connS[i][j] = ((i >= (nbInCluster - sG) and i <= (nbInCluster + sG)) \
                             or (j >= (nbInCluster - sG) and j <= (nbInCluster + sG))) and (i!=j)
                     # connS = np.float32(connS!=0)
@@ -1138,23 +1179,26 @@ class TfConnEvolveNet:
 
             if self.initWGap==True:
                 try:
-                    g_1 = getGSteady(15, self.nu, 1000)*2
+                    g_1 = getGSteady(15, self.nu, 1000)
                 except:
                     g_1 = 10
                 g0_1 = g_1 / (np.sum(conn1)**0.5) * 2
-                wGap_init_1 = (np.random.random_sample([N, N]).astype(np.float32) * (1 - 0.001) + 0.001) * g0_1
+                wGap_init_1 = (tf.random_normal((N, N), mean=0.0, stddev=1.0, dtype=tf.float32,
+                                          seed=None, name=None) * (1 - 0.001) + 0.001) * g0_1
                 wGap_init_1 *= conn1
 
                 try:
-                    g_2 = getGSteady(self.tauv, self.nu, 1000)*2
+                    g_2 = getGSteady(self.tauv, self.nu, 1000)
                 except:
                     g_2 = 10
                 g0_2 = g_2 / (np.sum(conn2)**0.5) * 2
-                wGap_init_2 = (np.random.random_sample([N, N]).astype(np.float32) * (1 - 0.001) + 0.001) * g0_2
+                wGap_init_2 = (tf.random_normal((N, N), mean=0.0, stddev=1.0, dtype=tf.float32,
+                                          seed=None, name=None) * (1 - 0.001) + 0.001) * g0_2
                 wGap_init_2 *= conn2
 
                 g0_S = (g0_1 + g0_2) / 2
-                wGap_init_S = (np.random.random_sample([N, N]).astype(np.float32) * (1 - 0.001) + 0.001) * g0_S
+                wGap_init_S = (tf.random_normal((N, N), mean=0.0, stddev=1.0, dtype=tf.float32,
+                                          seed=None, name=None) * (1 - 0.001) + 0.001) * g0_S
                 wGap_init_S *= connS
 
                 wGap_init = wGap_init_1 + wGap_init_2 + wGap_init_S
@@ -1163,16 +1207,19 @@ class TfConnEvolveNet:
             elif self.initWGap == -1:
                 g_1 = self.g1
                 g0_1 = g_1 / (np.sum(conn1) ** 0.5) * 2
-                wGap_init_1 = (np.random.random_sample([N, N]).astype(np.float32) * (1 - 0.001) + 0.001) * g0_1
+                wGap_init_1 = (tf.random_normal((N, N), mean=0.0, stddev=1.0, dtype=tf.float32,
+                                          seed=None, name=None) * (1 - 0.001) + 0.001) * g0_1
                 wGap_init_1 *= conn1
 
                 g_2 = self.g2
                 g0_2 = g_2 / (np.sum(conn1) ** 0.5) * 2
-                wGap_init_2 = (np.random.random_sample([N, N]).astype(np.float32) * (1 - 0.001) + 0.001) * g0_2
+                wGap_init_2 = (tf.random_normal((N, N), mean=0.0, stddev=1.0, dtype=tf.float32,
+                                          seed=None, name=None) * (1 - 0.001) + 0.001) * g0_2
                 wGap_init_2 *= conn2
 
                 g0_S = (g0_1 + g0_2) / 2
-                wGap_init_S = (np.random.random_sample([N, N]).astype(np.float32) * (1 - 0.001) + 0.001) * g0_S
+                wGap_init_S = (tf.random_normal((N, N), mean=0.0, stddev=1.0, dtype=tf.float32,
+                                          seed=None, name=None) * (1 - 0.001) + 0.001) * g0_S
                 wGap_init_S *= connS
 
                 wGap_init = wGap_init_1 + wGap_init_2 + wGap_init_S
@@ -1180,19 +1227,20 @@ class TfConnEvolveNet:
 
             else:
                 g0 = self.g / (N/2)
-                wGap_init = (np.random.random_sample([N, N]).astype(np.float32)*(1-0.001)+0.001) * g0
+                wGap_init = (tf.random_normal((N, N), mean=0.0, stddev=1.0, dtype=tf.float32,
+                                          seed=None, name=None) * (1 - 0.001) + 0.001) * g0
                 wGap_init *= conn
                 wGap_init0 = wGap_init
                 wGap_init_S = wGap_init
 
             # gmean_init = np.mean(wGap_init)
-            wII_init = np.ones([N, N], dtype=np.float32) * 700 / (np.sum(conn1)**0.5) / 0.25
+            wII_init = tf.ones((N, N), dtype=tf.float32) * tf.to_float(700 / (tf.reduce_sum(conn1)**0.5) / self.dt)
 
             wGap = tf.Variable(wGap_init0)
             # wGap0 = tf.constant(wGap_init0)
-            wGapS = tf.constant(wGap_init_S)
+            wGapS = tf.Variable(wGap_init_S)
             WII = tf.Variable(wII_init * conn)
-            zer = tf.constant(np.zeros([N, N], dtype='float32'))
+            zer = tf.Variable(tf.zeros((N, N), dtype=tf.float32))
 
             A_LTD = 2.45e-5 * self.FACT * 400 / N
             A_LTP = self.ratio * A_LTD
@@ -1225,7 +1273,8 @@ class TfConnEvolveNet:
             with tf.name_scope('Currents'):
                 # Discretized PDE update rules
                 wgap = tf.add(wGap, tf.cond(tf.equal(sim_index, self.connectTime), fn1, fn2))
-                wgap = wgap / (1 + tf.cast(tf.equal(sim_index, self.connectTime), tf.float32))
+                # divide the weights by 2 at connection time
+                # wgap = wgap / (1 + tf.cast(tf.equal(sim_index, self.connectTime), tf.float32))
                 iGap_ = tf.matmul(wgap, v) - tf.mul(tf.reshape(tf.reduce_sum(wgap, 0), (N, 1)), v)
                 iChem_ = iChem + dt / 5 * (-iChem + tf.matmul(WII, tf.to_float(vv)))
 
@@ -1351,7 +1400,7 @@ class TfConnEvolveNet:
                     self.sess.run([step], feed_dict={dt: self.dt, tauv: self.tauv, sim_index: i})
 
                 if self.spikeMonitor:
-                    # feed = {dt: 0.25, tauv: self.tauv, sim_index: i}
+                    # feed = {dt: self.dt, tauv: self.tauv, sim_index: i}
                     # self.sess.run(spike_update, feed_dict=feed)
                     self.raster.append(vv.eval())
 
