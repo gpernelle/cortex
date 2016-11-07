@@ -1104,9 +1104,9 @@ class TfConnEvolveNet:
             sG = int(self.sG)
             nbInCluster = int(N//2)
 
-            conn1 = np.ones([N,N])
-            conn2 = np.ones([N,N])
-            connS = np.ones([N,N])
+            conn1 = np.zeros([N,N])
+            conn2 = np.zeros([N,N])
+            connS = np.zeros([N,N])
 
             # conn_1 = tf.ones((nbInCluster + sG, nbInCluster + sG), dtype=tf.bool)
             # conn_1 = tf.pad(conn_1, [[0, N-(nbInCluster+sG)], [0, N-(nbInCluster+sG)]])

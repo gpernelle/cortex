@@ -87,6 +87,15 @@ def fourier(signal, dt = 0.1):
     return [f_val, p_val]
 
 @autojit
+def csd(v1, v2, dt = 0.1, nperseg=512):
+    '''
+    Return frequency with highest power, and its power
+    :param signal: list of 1D numpy array
+    :return: frequency, power
+    '''
+    return signal.csd(v1,v2, fs=1 / 0.0001, nperseg=512)
+
+@autojit
 def maxPowerFreq(y, dt):
     '''
     :param y: signal
