@@ -346,6 +346,7 @@ class TfConnEvolveNet:
         self.connectTime = 0
         self.FACT = 10
         self.ratio = 1
+        self.weight_step = 100
         self.nu = nu
         self.profiling = profiling
         if self.profiling:
@@ -431,6 +432,13 @@ class TfConnEvolveNet:
                           # run_metadata=self.run_metadata
                           )
 
+            # to check connections
+            self.conn = conn.eval()
+            self.conn1 = conn1.eval()
+            self.conn2 = conn2.eval()
+            self.connS = connS.eval()
+            self.conn0 = conn0.eval()
+
         with tf.device(self.device):
             scaling = tf.Variable(1 / (1 / (2 * 2 / self.dt)) ** 0.5 * 70, name="scaling")
 
@@ -452,17 +460,18 @@ class TfConnEvolveNet:
             LTDcontrol = tf.Variable(0, dtype='float32')
             dwcontrol = tf.Variable(0, dtype='float32')
 
-            # variables for monitoring
-            vvmean = tf.Variable(0, dtype='float32')
-            vvmeanN1 = tf.Variable(0, dtype='float32')
-            vvmeanN2 = tf.Variable(0, dtype='float32')
-            i1mean = tf.Variable(0, dtype='float32')
-            i2mean = tf.Variable(0, dtype='float32')
-            gammamean = tf.Variable(0, dtype='float32')
-            iEffm = tf.Variable(0, dtype='float32')
+            # monitoring variables
             self.spikes = self.init_float([T, N], "spikes")
-            self.vvmN1 = self.init_float([T,1], "spikes")
-
+            vvmN1 = self.init_float([T,1], "vv1")
+            vvmN2 = self.init_float([T,1], "vv2")
+            i1 = self.init_float([T,1], "i1")
+            i2 = self.init_float([T,1], "i2")
+            iEffm = self.init_float([T,1], "noise")
+            plastON = self.init_float([T,1], "plasticity_is_ON")
+            weight_step = self.weight_step
+            g1m = self.init_float([T//weight_step,1], "gamma_N1")
+            g2m = self.init_float([T//weight_step,1], "gamma_N2")
+            gSm = self.init_float([T//weight_step,1], "gamma_NS")
 
             # currents
             iBack =self.init_float([N, 1], 'iBack')
@@ -470,31 +479,30 @@ class TfConnEvolveNet:
             iGap =self.init_float([N, 1], 'iGap')
             iChem =self.init_float([N, 1], 'iChem')
 
-            # to check connections
-            self.conn = conn.eval()
-            self.conn1 = conn1.eval()
-            self.conn2 = conn2.eval()
-            self.connS = connS.eval()
-            self.conn0 = conn0.eval()
+
+            conn1 = tf.constant(self.conn1, name="N1")
+            conn2 = tf.constant(self.conn2, name="N2")
+            connS = tf.constant(self.connS, name="NS")
 
             # connection matrices for before and after the connection is made
-            allowedConnections = tf.Variable(conn, name='with_shared')
-            allowedConnections0 = tf.Variable(conn0, name='without_shared')
+            allowedConnections = tf.constant(self.conn, name='with_shared')
+            allowedConnections0 = tf.constant(self.conn0, name='without_shared')
 
             input = tf.cast(tf.constant(self.input), tf.float32)
             sumSubnetGap = ((nbInCluster-sG)*(nbInCluster-sG-1))**0.5 * 2
 
             # plasticity learning rates
-            A_LTD = tf.Variable(2.45e-5 * self.FACT * 400 / N, "A_LTP")
-            A_LTP = tf.Variable(self.ratio * A_LTD, "A_LTD")
+            A_LTD_ = 2.45e-5 * self.FACT * 400 / N
+            A_LTD = tf.constant(A_LTD_, name="A_LTP")
+            A_LTP = tf.constant(self.ratio * A_LTD_, name="A_LTD")
 
             # stimulation
-            TImean = tf.Variable(self.nu*1.0, name="mean_input_current")
+            TImean = tf.constant(self.nu*1.0, name="mean_input_current")
             # timestep
-            dt = tf.Variable(self.dt * 1.0, name="timestep")
+            dt = tf.constant(self.dt * 1.0, name="timestep")
             # connection and plasticity times
-            connectTime = tf.Variable(self.connectTime*1.0, name="connection_time")
-            startPlast = tf.Variable(self.startPlast*1.0, name="plasticity_starting_time")
+            connectTime = tf.constant(self.connectTime*1.0, name="connection_time")
+            startPlast = tf.constant(self.startPlast*1.0, name="plasticity_starting_time")
             sim_index = tf.Variable(0.0, name="sim_index")
             one = tf.constant(1.0)
             plastON = tf.Variable(0.0, name='plast_ON')
@@ -570,9 +578,9 @@ class TfConnEvolveNet:
             # gmean_init = np.mean(wGap_init)
             wII_init = tf.ones((N, N), dtype=tf.float32) * tf.to_float(700 / (tf.reduce_sum(conn1)**0.5) / self.dt)
 
-            # just to check
-            self.wGap_init_S = wGap_init_S.eval()
-            self.wGap_init0 = wGap_init0.eval()
+            # # just to check
+            # self.wGap_init_S = wGap_init_S.eval()
+            # self.wGap_init0 = wGap_init0.eval()
 
             wGap = tf.Variable(wGap_init0)
             wGapS = tf.Variable(wGap_init_S)
@@ -669,14 +677,32 @@ class TfConnEvolveNet:
 
             # monitoring
             with tf.name_scope('Monitoring'):
-                vvmean_ = tf.reduce_sum(tf.to_float(vv_))
                 vvmeanN1_ = tf.reduce_sum(tf.to_float(vvN1_))
                 vvmeanN2_ = tf.reduce_sum(tf.to_float(vvN2_))
+                imean1_ = tf.reduce_mean(I_ * subnet)
+                imean2_ = tf.reduce_mean(I_ * subnetout)
+                iEffm_ = tf.reduce_mean(iEff_)
+                update = tf.group(
+                    tf.scatter_update(vvmN1, tf.to_int32(sim_index), tf.reshape(tf.reduce_sum(tf.to_float(vvN1_)), (1,))),
+                    tf.scatter_update(vvmN2, tf.to_int32(sim_index), tf.reshape(tf.reduce_sum(tf.to_float(vvN2_)), (1,))),
+                    tf.scatter_update(i1, tf.to_int32(sim_index), tf.reshape(imean1_, (1,))),
+                    tf.scatter_update(i2, tf.to_int32(sim_index), tf.reshape(imean2_, (1,))),
+                    tf.scatter_update(iEffm, tf.to_int32(sim_index), tf.reshape(iEffm_, (1,))),
+                )
+
+            with tf.name_scope('Weights_monitoring'):
+                g1m_ = tf.reduce_sum(wGap_*conn1)
+                g2m_ = tf.reduce_sum(wGap_*conn2)
+                gSm_ = tf.reduce_sum(wGap_*connS)
+                update_weights = tf.group(
+                    tf.scatter_update(g1m, tf.to_int32(sim_index/weight_step), tf.reshape(g1m_, (1,))),
+                    tf.scatter_update(g2m, tf.to_int32(sim_index/weight_step), tf.reshape(g2m_, (1,))),
+                    tf.scatter_update(gSm, tf.to_int32(sim_index/weight_step), tf.reshape(gSm_, (1,))),
+                )
+
             with tf.name_scope('Raster_Plot'):
                 spike_update = tf.scatter_update(self.spikes, tf.to_int32(sim_index), tf.reshape((vv_), (N,)))
-                update = tf.group(
-                    tf.scatter_update(self.vvmN1, tf.to_int32(sim_index), tf.reshape(vvmeanN1_, (1,))),
-                )
+
 
             # Operation to update the state
             step = tf.group(
@@ -689,12 +715,6 @@ class TfConnEvolveNet:
                 iEff.assign(iEff_),
                 LowSp.assign(LowSp_),
                 wGap.assign(wGap_),
-                vvmean.assign(vvmean_),
-                vvmeanN1.assign(vvmeanN1_),
-                vvmeanN2.assign(vvmeanN2_),
-                iEffm.assign(tf.reduce_mean(iEff_)),
-                i1mean.assign(tf.reduce_mean(I_ * subnet)),
-                i2mean.assign(tf.reduce_mean(I_ * subnetout)),
             )
 
             # debug unstability
@@ -703,7 +723,6 @@ class TfConnEvolveNet:
                 LTPcontrol.assign(LTPcontrol_),
                 LTDcontrol.assign(LTDcontrol_),
                 dwcontrol.assign(dwcontrol_),
-
             )
 
             # plasticity
@@ -715,40 +734,36 @@ class TfConnEvolveNet:
         self.sess.run(tf.initialize_all_variables())
 
         # initialize and fill the var arrays (TODO: do in on the device, not the host)
-        self.vm = []
-        self.um = []
-        self.vvm = []
-        # self.vvmN1 = []
-        self.vvmN2 = []
-        self.im = []
-        self.i1 = []
-        self.i2 = []
+
         self.gamma = []
         self.gammaN1 = []
         self.gammaN2 = []
         self.gammaNS = []
         self.gammaTest = []
         self.raster = []
-        self.iEff = []
-        self.plastON = []
+        # self.plastON = []
 
         t0 = time.time()
         for i in range(T):
             # Step simulation
-            if i >= self.startPlast or i == self.connectTime:
-                self.sess.run([step, plast, update],
-                              options=self.run_options,
-                              run_metadata=self.run_metadata
-                              )
-            else:
-                self.sess.run([step, update],
-                              options=self.run_options,
-                              run_metadata=self.run_metadata
-                              )
-
             if self.spikeMonitor:
-                # self.sess.run()
-                self.raster.append(vv.eval())
+                # we save the raster plot
+                if i >= self.startPlast or i == self.connectTime:
+                    self.sess.run([step, plast, update, spike_update])
+                else:
+                    self.sess.run([step, update, spike_update])
+            else:
+                # we don't save the raster plot
+                if i >= self.startPlast or i == self.connectTime:
+                    self.sess.run([step, plast, update],
+                                  options=self.run_options,
+                                  run_metadata=self.run_metadata
+                                  )
+                else:
+                    self.sess.run([step, update],
+                                  options=self.run_options,
+                                  run_metadata=self.run_metadata
+                                  )
 
             if self.debug:
                 self.sess.run([debug],
@@ -766,35 +781,44 @@ class TfConnEvolveNet:
                 self.dwcontrol.append(dwcontrol.eval())
                 self.LTDcontrol.append(LTDcontrol.eval())
                 self.LTPcontrol.append(LTPcontrol.eval())
-            #
-            #
-            # self.vvm.append(vvmean.eval())
-            # self.plastON.append(plastON.eval())
-            # self.vvmN1.append(vvmeanN1.eval())
-            # self.vvmN2.append(vvmeanN2.eval())
-            # self.iEff.append(iEffm.eval())
-            # self.i1.append(i1mean.eval())
-            # self.i2.append(i2mean.eval())
-            if i % 100 == 0:
-                weights = wGap.eval()
-                self.gammaN1.append(np.mean(weights[:nbInCluster - sG, :nbInCluster - sG])*N)
-                self.gammaN2.append(np.mean(weights[nbInCluster + sG:, nbInCluster + sG:])*N)
-                # self.gammaTest.append(np.mean(weights[:nbInCluster - sG, nbInCluster + sG:])*N)
-                self.gammaNS.append(np.mean(weights[nbInCluster - sG:nbInCluster + sG,
-                                            nbInCluster - sG:nbInCluster + sG]) * N)
 
-                self.gamma.append(gammamean.eval())
+            # self.plastON.append(plastON.eval())
+
+            # if i % 100 == 0:
+            #     weights = wGap.eval()
+            #     self.gammaN1.append(np.mean(weights[:nbInCluster - sG, :nbInCluster - sG])*N)
+            #     self.gammaN2.append(np.mean(weights[nbInCluster + sG:, nbInCluster + sG:])*N)
+            #     # self.gammaTest.append(np.mean(weights[:nbInCluster - sG, nbInCluster + sG:])*N)
+            #     self.gammaNS.append(np.mean(weights[nbInCluster - sG:nbInCluster + sG,
+            #                                 nbInCluster - sG:nbInCluster + sG]) * N)
+            #
+            #     self.gamma.append(gammamean.eval())
+
+            if i % weight_step == 0:
+                self.sess.run([update_weights])
 
             if i==0:
-                self.w0 = weights
+                self.w0 = wGap.eval()
             elif i==T-1:
-                self.wE = weights
+                self.wE = wGap.eval()
 
-            # self.raster = self.spikes.eval()
+            #
+
+        # monitoring variables
+        self.vvmN1 = vvmN1.eval()
+        self.vvmN2 = vvmN2.eval()
+        self.i1 = i1.eval()
+        self.i2 = i2.eval()
+        self.iEff = iEffm.eval()
+        self.plastON = plastON.eval()
+        self.gammaN1 = g1m.eval() / np.sum(self.conn1)
+        self.gammaN2 = g2m.eval() / np.sum(self.conn2)
+        self.gammaNS = gSm.eval() / np.sum(self.connS)
+        if self.spikeMonitor:
+            self.raster = self.spikes.eval()
 
         # profiling information
         # Create the Timeline object, and write it to a json
-        self.vvmN1 = self.vvmN1.eval()
         if self.profiling:
             tl = timeline.Timeline(self.run_metadata.step_stats)
             ctf = tl.generate_chrome_trace_format()
