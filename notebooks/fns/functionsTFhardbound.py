@@ -146,7 +146,7 @@ class TfSingleNet:
             conn = np.ones((N, N), dtype='float32') - np.diag(np.ones((N,), dtype='float32'))
             nbOfGaps = N*(N-1)
 
-            input = tf.cast(tf.constant(self.input), tf.float32)
+            input = tf.cast(tf.Variable(self.input), tf.float32)
 
             if self.g0fromFile:
                 self.g = getGSteady(self.tauv, 5, 1000)
@@ -349,12 +349,7 @@ class TfConnEvolveNet:
         self.weight_step = 100
         self.nu = nu
         self.profiling = profiling
-        if self.profiling:
-            self.run_options = tf.RunOptions(trace_level=tf.RunOptions.FULL_TRACE)
-            self.run_metadata = tf.RunMetadata()
-        else:
-            self.run_metadata = None
-            self.run_options = None
+
         self.sess = tf.InteractiveSession(config=tf.ConfigProto(
             inter_op_parallelism_threads=NUM_CORES,
             intra_op_parallelism_threads=NUM_CORES,
@@ -413,11 +408,11 @@ class TfConnEvolveNet:
             conn1_ = tf.to_float(conn1)
             conn2_ = tf.to_float(conn2)
 
-            conn = tf.Variable(tf.ones((N,N)))
-            conn0 = tf.Variable(tf.ones((N,N)))
-            conn1 = tf.Variable(tf.ones((N,N)))
-            conn2 = tf.Variable(tf.ones((N,N)))
-            connS = tf.Variable(tf.ones((N,N)))
+            conn = tf.Variable(tf.ones((N,N)), name="connCPU")
+            conn0 = tf.Variable(tf.ones((N,N)), name="conn0CPU")
+            conn1 = tf.Variable(tf.ones((N,N)), name="conn1CPU")
+            conn2 = tf.Variable(tf.ones((N,N)), name="conn2CPU")
+            connS = tf.Variable(tf.ones((N,N)), name="connSCPU")
 
             synapses = tf.group(
                 conn.assign(conn_),
@@ -426,7 +421,7 @@ class TfConnEvolveNet:
                 conn2.assign(conn2_),
                 connS.assign(connS_)
             )
-            self.sess.run(tf.initialize_all_variables())
+            tf.global_variables_initializer().run()
             self.sess.run([synapses],
                           # options=self.run_options,
                           # run_metadata=self.run_metadata
@@ -450,9 +445,9 @@ class TfConnEvolveNet:
             vv =self.init_float([N, 1], 'spiking')
 
             # membrane potential time constant
-            subnet = tf.concat(0, [tf.ones([N // 2, 1]), tf.zeros([N - N // 2, 1])])
-            subnetout = tf.concat(0, [tf.zeros([N // 2, 1]), tf.ones([N - N // 2, 1])])
-            tauvSubnet = tf.Variable(subnet * 15 + subnetout * self.tauv, "tauv")
+            subnet = tf.concat(0, [tf.ones([N // 2, 1]), tf.zeros([N // 2, 1])])
+            subnetout = tf.concat(0, [tf.zeros([N // 2, 1]), tf.ones([ N // 2, 1])])
+            tauvSubnet = tf.Variable(subnet * 15 + subnetout * self.tauv, name="tauv")
 
             # debug
             wcontrol = tf.Variable(0, dtype='float32')
@@ -462,16 +457,17 @@ class TfConnEvolveNet:
 
             # monitoring variables
             self.spikes = self.init_float([T, N], "spikes")
-            vvmN1 = self.init_float([T,1], "vv1")
-            vvmN2 = self.init_float([T,1], "vv2")
-            i1 = self.init_float([T,1], "i1")
-            i2 = self.init_float([T,1], "i2")
-            iEffm = self.init_float([T,1], "noise")
-            plastON = self.init_float([T,1], "plasticity_is_ON")
+            vvmN1 = self.init_float([T], "vv1")
+            vvmN2 = self.init_float([T], "vv2")
+            i1 = self.init_float([T], "i1")
+            i2 = self.init_float([T], "i2")
+            iEffm = self.init_float([T], "noise")
+            plastON = self.init_float([T], "plasticity_is_ON")
+
             weight_step = self.weight_step
-            g1m = self.init_float([T//weight_step,1], "gamma_N1")
-            g2m = self.init_float([T//weight_step,1], "gamma_N2")
-            gSm = self.init_float([T//weight_step,1], "gamma_NS")
+            g1m = self.init_float([T//weight_step], "gamma_N1")
+            g2m = self.init_float([T//weight_step], "gamma_N2")
+            gSm = self.init_float([T//weight_step], "gamma_NS")
 
             # currents
             iBack =self.init_float([N, 1], 'iBack')
@@ -480,32 +476,30 @@ class TfConnEvolveNet:
             iChem =self.init_float([N, 1], 'iChem')
 
 
+            conn = tf.constant(self.conn, name="N1_N2_NS")
+            conn0 = tf.constant(self.conn0, name="N1_N2")
             conn1 = tf.constant(self.conn1, name="N1")
             conn2 = tf.constant(self.conn2, name="N2")
             connS = tf.constant(self.connS, name="NS")
 
-            # connection matrices for before and after the connection is made
-            allowedConnections = tf.constant(self.conn, name='with_shared')
-            allowedConnections0 = tf.constant(self.conn0, name='without_shared')
+            # # connection matrices for before and after the connection is made
+            # allowedConnections = tf.Variable(self.conn, name='with_shared')
+            # allowedConnections0 = tf.Variable(self.conn0, name='without_shared')
 
             input = tf.cast(tf.constant(self.input), tf.float32)
             sumSubnetGap = ((nbInCluster-sG)*(nbInCluster-sG-1))**0.5 * 2
 
             # plasticity learning rates
-            A_LTD_ = 2.45e-5 * self.FACT * 400 / N
-            A_LTD = tf.constant(A_LTD_, name="A_LTP")
-            A_LTP = tf.constant(self.ratio * A_LTD_, name="A_LTD")
+            A_LTD = tf.Variable(2.45e-5 * self.FACT * 400 / N, name="A_LTP")
+            A_LTP = tf.Variable(self.ratio * A_LTD, name="A_LTD")
 
             # stimulation
             TImean = tf.constant(self.nu*1.0, name="mean_input_current")
             # timestep
             dt = tf.constant(self.dt * 1.0, name="timestep")
             # connection and plasticity times
-            connectTime = tf.constant(self.connectTime*1.0, name="connection_time")
-            startPlast = tf.constant(self.startPlast*1.0, name="plasticity_starting_time")
             sim_index = tf.Variable(0.0, name="sim_index")
-            one = tf.constant(1.0)
-            plastON = tf.Variable(0.0, name='plast_ON')
+            one = tf.Variable(1.0)
 
 
             if self.initWGap==True:
@@ -530,10 +524,10 @@ class TfConnEvolveNet:
                                           seed=None, name=None) * (1 - 0.001) + 0.001) * g0_2
                 wGap_init_2 = tf.mul(wGap_init_2, conn2)
 
-                g0_S = (g0_1 + g0_2) / 2
-                wGap_init_S = (tf.random_normal((N, N), mean=0.0, stddev=1.0, dtype=tf.float32,
-                                          seed=None, name=None) * (1 - 0.001) + 0.001) * g0_S
-                wGap_init_S = tf.mul(wGap_init_S, connS)
+                # g0_S = (g0_1 + g0_2) / 2
+                # wGap_init_S = (tf.random_normal((N, N), mean=0.0, stddev=1.0, dtype=tf.float32,
+                #                           seed=None, name=None) * (1 - 0.001) + 0.001) * g0_S
+                # wGap_init_S = tf.mul(wGap_init_S, connS)
 
 
                 # wGap_init = wGap_init_1 + wGap_init_2 + wGap_init_S
@@ -546,20 +540,20 @@ class TfConnEvolveNet:
                 '''
                 g_1 = self.g1
                 g0_1 = g_1 / sumSubnetGap
-                wGap_init_1 = (tf.random_normal((N, N), mean=0.0, stddev=1.0, dtype=tf.float32,
-                                          seed=None, name=None) * (1 - 0.001) + 0.001) * g0_1
+                wGap_init_1 = (tf.random_normal((N, N), mean=g0_1, stddev=g0_1/2, dtype=tf.float32,
+                                          seed=None, name=None))
                 wGap_init_1 = tf.mul(wGap_init_1, conn1)
 
                 g_2 = self.g2
                 g0_2 = g_2 / sumSubnetGap
-                wGap_init_2 = (tf.random_normal((N, N), mean=0.0, stddev=1.0, dtype=tf.float32,
-                                          seed=None, name=None) * (1 - 0.001) + 0.001) * g0_2
+                wGap_init_2 = (tf.random_normal((N, N), mean=g0_2, stddev=g0_2/2, dtype=tf.float32,
+                                          seed=None, name=None))
                 wGap_init_2 = tf.mul(wGap_init_2, conn2)
 
-                g0_S = (g0_1 + g0_2) / 2
-                wGap_init_S = (tf.random_normal((N, N), mean=0.0, stddev=1.0, dtype=tf.float32,
-                                          seed=None, name=None) * (1 - 0.001) + 0.001) * g0_S
-                wGap_init_S = tf.mul(wGap_init_S, connS)
+                # g0_S = (g0_1 + g0_2) / 2
+                # wGap_init_S = (tf.random_normal((N, N), mean=g0_S, stddev=g0_S/2, dtype=tf.float32,
+                #                           seed=None, name=None))
+                # wGap_init_S = tf.mul(wGap_init_S, connS)
 
                 # wGap_init = wGap_init_1 + wGap_init_2 + wGap_init_S
                 wGap_init0 = wGap_init_1 + wGap_init_2
@@ -573,7 +567,7 @@ class TfConnEvolveNet:
                                           seed=None, name=None) * (1 - 0.001) + 0.001) * g0
                 # wGap_init = random_mat * (conn1+conn2+connS)
                 wGap_init0 = tf.mul(random_mat, (conn1+conn2))
-                wGap_init_S = tf.mul(random_mat, connS)
+                # wGap_init_S = tf.mul(random_mat, connS)
 
             # gmean_init = np.mean(wGap_init)
             wII_init = tf.ones((N, N), dtype=tf.float32) * tf.to_float(700 / (tf.reduce_sum(conn1)**0.5) / self.dt)
@@ -583,33 +577,25 @@ class TfConnEvolveNet:
             # self.wGap_init0 = wGap_init0.eval()
 
             wGap = tf.Variable(wGap_init0)
-            wGapS = tf.Variable(wGap_init_S)
+            # wGapS = tf.Variable(wGap_init_S)
             WII = tf.Variable(tf.mul(wII_init, conn))
-            zer = tf.Variable(tf.zeros((N, N), dtype=tf.float32))
 
-            # because no if/else in tensorflow, we need to define functions that will be chosen
-            # depending on the result of the boolean in tf.cond(bool, fn1, fn2)
-            def fn1():
-                return wGapS
-
-            def fn2():
-                return zer
-
-            def fn3():
-                return allowedConnections
-
-            def fn4():
-                return allowedConnections0
         #################################################################################
         ## Computation
         #################################################################################
         with tf.device(self.device):
+            with tf.name_scope('Connect'):
+                g0_S = tf.reduce_mean(wGap*conn1)*2 + tf.reduce_mean(wGap*conn2)
+                wGapS = tf.mul(tf.random_normal((N, N), mean=g0_S, stddev=g0_S / 2, dtype=tf.float32,
+                                                seed=None, name=None), connS)
+                connect = tf.group(
+                    wGap.assign(tf.add(wGap, wGapS))
+                )
+
             with tf.name_scope('Currents'):
-                # Discretized PDE update rules
-                wgap = tf.add(wGap, tf.cond(tf.equal(sim_index, connectTime), fn1, fn2))
                 # divide the weights by 2 at connection time
                 # wgap = wgap / (1 + tf.cast(tf.equal(sim_index, connectTime), tf.float32))
-                iGap_ = tf.matmul(wgap, v) - tf.mul(tf.reshape(tf.reduce_sum(wgap, 0), (N, 1)), v)
+                iGap_ = tf.matmul(wGap, v) - tf.mul(tf.reshape(tf.reduce_sum(wGap, 0), (N, 1)), v)
                 iChem_ = iChem + dt / 5 * (-iChem + tf.matmul(WII, tf.to_float(vv)))
 
                 # current
@@ -658,21 +644,21 @@ class TfConnEvolveNet:
                 dwLTD_ = A_LTD * (A + tf.transpose(A))
                 dwLTP_ = A_LTP * (B + tf.transpose(B))
 
-                plastON_ = tf.logical_or(tf.logical_and(sim_index > startPlast,sim_index < (connectTime + 1000)),
-                                   sim_index > (connectTime + startPlast + 1000))
-                plastON_ = tf.cast(plastON_, tf.float32)
-                dwGap_ = dt * (dwLTP_ - dwLTD_) * plastON_
+                dwGap_ = dt * (dwLTP_ - dwLTD_)
                 '''
                 multiply by 0 where there is no gap junction (upper right and lower left of the connection matrix
                 '''
-                wGap_ = tf.mul(tf.clip_by_value(wgap + dwGap_, clip_value_min=0, clip_value_max=10 ** 10),
-                               tf.cond((sim_index >= connectTime), fn3, fn4))
+                # wGap_ = tf.mul(tf.clip_by_value(wGap + dwGap_, clip_value_min=0, clip_value_max=10 ** 10),
+                #                tf.cond((sim_index >= connectTime), fn3, fn4))
+                wgap = tf.clip_by_value(wGap + dwGap_, clip_value_min=0, clip_value_max=10 ** 10)
+                wGap_before_ = tf.mul(wgap, conn0)
+                wGap_after_ = tf.mul(wgap, conn)
 
             # debug
             with tf.name_scope('debug'):
                 LTDcontrol_ = tf.reduce_sum(dwLTD_)
                 LTPcontrol_ =  tf.reduce_sum(dwLTP_)
-                wcontrol_ = tf.reduce_sum(wgap)
+                wcontrol_ = tf.reduce_sum(wGap)
                 dwcontrol_ = tf.reduce_sum(dwGap_)
 
             # monitoring
@@ -683,21 +669,21 @@ class TfConnEvolveNet:
                 imean2_ = tf.reduce_mean(I_ * subnetout)
                 iEffm_ = tf.reduce_mean(iEff_)
                 update = tf.group(
-                    tf.scatter_update(vvmN1, tf.to_int32(sim_index), tf.reshape(tf.reduce_sum(tf.to_float(vvN1_)), (1,))),
-                    tf.scatter_update(vvmN2, tf.to_int32(sim_index), tf.reshape(tf.reduce_sum(tf.to_float(vvN2_)), (1,))),
-                    tf.scatter_update(i1, tf.to_int32(sim_index), tf.reshape(imean1_, (1,))),
-                    tf.scatter_update(i2, tf.to_int32(sim_index), tf.reshape(imean2_, (1,))),
-                    tf.scatter_update(iEffm, tf.to_int32(sim_index), tf.reshape(iEffm_, (1,))),
+                    tf.scatter_update(vvmN1, tf.to_int32(sim_index), vvmeanN1_),
+                    tf.scatter_update(vvmN2, tf.to_int32(sim_index), vvmeanN2_),
+                    tf.scatter_update(i1, tf.to_int32(sim_index), imean1_),
+                    tf.scatter_update(i2, tf.to_int32(sim_index), imean2_),
+                    tf.scatter_update(iEffm, tf.to_int32(sim_index), iEffm_),
                 )
 
             with tf.name_scope('Weights_monitoring'):
-                g1m_ = tf.reduce_sum(wGap_*conn1)
-                g2m_ = tf.reduce_sum(wGap_*conn2)
-                gSm_ = tf.reduce_sum(wGap_*connS)
+                g1m_ = tf.reduce_sum(wGap*conn1)
+                g2m_ = tf.reduce_sum(wGap*conn2)
+                gSm_ = tf.reduce_sum(wGap*connS)
                 update_weights = tf.group(
-                    tf.scatter_update(g1m, tf.to_int32(sim_index/weight_step), tf.reshape(g1m_, (1,))),
-                    tf.scatter_update(g2m, tf.to_int32(sim_index/weight_step), tf.reshape(g2m_, (1,))),
-                    tf.scatter_update(gSm, tf.to_int32(sim_index/weight_step), tf.reshape(gSm_, (1,))),
+                    tf.scatter_update(g1m, tf.to_int32(sim_index/weight_step), g1m_),
+                    tf.scatter_update(g2m, tf.to_int32(sim_index/weight_step), g2m_),
+                    tf.scatter_update(gSm, tf.to_int32(sim_index/weight_step), gSm_),
                 )
 
             with tf.name_scope('Raster_Plot'):
@@ -708,13 +694,11 @@ class TfConnEvolveNet:
             step = tf.group(
                 sim_index.assign(tf.add(sim_index, one)),
                 v.assign(v_),
-                plastON.assign(plastON_),
                 vv.assign(vv_),
                 u.assign(u_),
                 iBack.assign(iBack_),
                 iEff.assign(iEff_),
                 LowSp.assign(LowSp_),
-                wGap.assign(wGap_),
             )
 
             # debug unstability
@@ -726,50 +710,61 @@ class TfConnEvolveNet:
             )
 
             # plasticity
-            plast = tf.group(
-                            wGap.assign(wGap_),
+            plast_before = tf.group(
+                wGap.assign(wGap_before_),
                         )
+            plast_after = tf.group(
+                wGap.assign(wGap_after_),
+            )
 
         # initialize the graph
-        self.sess.run(tf.initialize_all_variables())
+        tf.global_variables_initializer().run()
 
-        # initialize and fill the var arrays (TODO: do in on the device, not the host)
-
-        self.gamma = []
-        self.gammaN1 = []
-        self.gammaN2 = []
-        self.gammaNS = []
-        self.gammaTest = []
-        self.raster = []
-        # self.plastON = []
+        if self.profiling:
+            self.run_options = tf.RunOptions(trace_level=tf.RunOptions.FULL_TRACE)
+            self.run_metadata = tf.RunMetadata()
+        else:
+            self.run_metadata = None
+            self.run_options = None
 
         t0 = time.time()
         for i in range(T):
             # Step simulation
+            ops = {'before': [step, plast_before, update],
+                   'after': [step, plast_after, update],
+                   'static': [step, update]
+                   }
             if self.spikeMonitor:
-                # we save the raster plot
-                if i >= self.startPlast or i == self.connectTime:
-                    self.sess.run([step, plast, update, spike_update])
-                else:
-                    self.sess.run([step, update, spike_update])
-            else:
-                # we don't save the raster plot
-                if i >= self.startPlast or i == self.connectTime:
-                    self.sess.run([step, plast, update],
-                                  options=self.run_options,
-                                  run_metadata=self.run_metadata
-                                  )
-                else:
-                    self.sess.run([step, update],
-                                  options=self.run_options,
-                                  run_metadata=self.run_metadata
-                                  )
-
-            if self.debug:
-                self.sess.run([debug],
+                for k, v in ops.items():
+                    ops[k] = v + [spike_update]
+            if i == self.connectTime:
+                self.sess.run([connect],
                               options=self.run_options,
                               run_metadata=self.run_metadata
                               )
+            if i>self.startPlast and i<self.connectTime:
+                self.sess.run(ops['before'],
+                              options=self.run_options,
+                              run_metadata=self.run_metadata
+                              )
+            elif i>=self.connectTime + 1000:
+                self.sess.run(ops['after'],
+                              options=self.run_options,
+                              run_metadata=self.run_metadata
+                              )
+            elif i>=self.connectTime + self.startPlast + 1000:
+                self.sess.run(ops['after'],
+                              options=self.run_options,
+                              run_metadata=self.run_metadata
+                              )
+            else:
+                self.sess.run(ops['static'],
+                              options=self.run_options,
+                              run_metadata=self.run_metadata
+                              )
+
+            if self.debug:
+                self.sess.run([debug])
 
                 if i==0:
                     self.wcontrol = []
@@ -781,8 +776,6 @@ class TfConnEvolveNet:
                 self.dwcontrol.append(dwcontrol.eval())
                 self.LTDcontrol.append(LTDcontrol.eval())
                 self.LTPcontrol.append(LTPcontrol.eval())
-
-            # self.plastON.append(plastON.eval())
 
             # if i % 100 == 0:
             #     weights = wGap.eval()
@@ -810,7 +803,6 @@ class TfConnEvolveNet:
         self.i1 = i1.eval()
         self.i2 = i2.eval()
         self.iEff = iEffm.eval()
-        self.plastON = plastON.eval()
         self.gammaN1 = g1m.eval() / np.sum(self.conn1)
         self.gammaN2 = g2m.eval() / np.sum(self.conn2)
         self.gammaNS = gSm.eval() / np.sum(self.connS)

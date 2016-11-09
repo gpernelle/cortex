@@ -40,6 +40,7 @@ gpu1 = TfConnEvolveNet(N=N,
 # gpu.input = apple
 gpu1.dt = 0.1
 gpu1.initWGap = False
+gpu1.profiling = True
 gpu1.g1 = 10
 gpu1.g2 = 10
 gpu1.debug = False
