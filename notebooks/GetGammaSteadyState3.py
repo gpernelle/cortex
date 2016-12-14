@@ -9,7 +9,7 @@ import mutual_info
 import gc
 
 i=0
-p = Pool(nodes=3)
+p = Pool(nodes=1)
 params = []
 for nu in range(0,200,10):
     for tauv in [15]:
@@ -36,12 +36,12 @@ def runFn(things):
                       startPlast = 0,
                       nu = nu,
                       NUM_CORES = 1,
-                      memfraction=0.3)
+                      memfraction=0.4)
     # gpu.input = apple
     gpu.runTFSimul()
 
 
-    filename = "GetSteadyState4-tauv-%d_g-%d_N-%d_T-%d_k-%d" % (tauv, g, N, T, nu)
+    filename = "GetSteadyState40-tauv-%d_g-%d_N-%d_T-%d_k-%d" % (tauv, g, N, T, nu)
     with open(filename, 'wb') as f:
         four = fourier(gpu.vvm[100:])
         np.savez(f,

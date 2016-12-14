@@ -1,19 +1,19 @@
 __author__ = 'G. Pernelle'
-import pathos.multiprocessing as mp
+# import pathos.multiprocessing as mp
 from pathos.multiprocessing import ProcessingPool as Pool
-from pathos.multiprocessing import ThreadingPool as tPool
-import matplotlib
+# from pathos.multiprocessing import ThreadingPool as tPool
+import matplotlib as mpl
 import numpy as np
-matplotlib.use('Agg')
+mpl.use('Agg')
 from scipy.optimize import curve_fit
 
 from numba import autojit
 
 import importlib as imp
 import pandas as pd
-import pylab as plt
-import ipyparallel as ipp
-import re, csv, os, datetime, os, sys, cubehelix, sh, subprocess, math, socket, time
+import matplotlib.pyplot as plt
+# import ipyparallel as ipp
+import re, csv, os, datetime, os, sys, sh, math, socket, time
 from scipy.fftpack import fft
 from matplotlib import gridspec
 from matplotlib.pyplot import cm
@@ -37,12 +37,13 @@ plt.style.use('ggplot')
 
 fontsize =14
 
-matplotlib.rc('xtick', labelsize=fontsize)
-matplotlib.rc('ytick', labelsize=fontsize)
-matplotlib.rc('axes', labelsize = fontsize)
-matplotlib.rc('axes', titlesize = fontsize)
-matplotlib.rc('lines', linewidth=2)
-matplotlib.rc('axes', facecolor = "white")
+mpl.rc('xtick', labelsize=fontsize)
+mpl.rc('ytick', labelsize=fontsize)
+mpl.rc('axes', labelsize = fontsize)
+mpl.rc('axes', titlesize = fontsize)
+mpl.rc('lines', linewidth=2)
+mpl.rc('axes', facecolor="white")
+mpl.rcParams['pdf.fonttype'] = 42
 
 today = datetime.date.today()
 todayStr = '%04d%02d%02d' % (today.year, today.month, today.day)
