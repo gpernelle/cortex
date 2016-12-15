@@ -1,14 +1,14 @@
 import fns
 from fns import *
-from fns.functionsTFhardbound import *
+from fns.functionsTF import *
 
 
 i=0
 params = []
-N = 100
+N = 1000
 for nu in range(0,200,10):
     for tauv in [15, 30, 45, 60, 90]:
-            for ratio in [0.2,0.5,1,2,3]:
+            for ratio in [1]:
                 for g in [10]:
                     i+=1
                     params.append([N, g, tauv, i, nu, ratio])
@@ -25,11 +25,13 @@ def runFn(things):
                       T=T,
                       disp=False,
                       tauv=tauv,
-                      device='/cpu:0',
+                      device='/gpu:0',
                       spikeMonitor=False,
                       g0=g,
                       startPlast = 50,
                       nu = nu,
+                      ratioNI=0.2,
+                      memfraction=0.1,
                       NUM_CORES = 1)
     # gpu.input = apple
     gpu.ratio = ratio
@@ -40,10 +42,12 @@ def runFn(things):
 
     filename = "../data/GetGammaSteadyState/GetSteadyState100-tauv-%d_g-%d_N-%d_T-%d_nu-%d_ratio-%.2f" % (tauv, g, N, T, nu, ratio)
     with open(filename, 'wb') as f:
-        four = fourier(gpu.vvm[100:])
+        four = fourier(gpu.vvmI[100:])
         np.savez(f,
-                 vvm = gpu.vvm,
-                 im = gpu.im,
+                 vvmE = gpu.vvmE,
+                 vvmI = gpu.vvmI,
+                 imE = gpu.imE,
+                 imI = gpu.imI,
                  freq = four[0],
                  power = four[1],
                  gamma = gpu.gamma,
@@ -52,6 +56,6 @@ def runFn(things):
     gc.collect()
 
 print(len(params))
-p = Pool(nodes=55)
+p = Pool(nodes=3)
 re = p.amap(runFn, params)
 re.get()

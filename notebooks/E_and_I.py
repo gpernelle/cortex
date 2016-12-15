@@ -25,17 +25,17 @@ from IPython.display import clear_output, Image, display
 
 # In[2]:
 
-N, g, tauv, i, nu = 1000, 7,15,0,100
-T = 100
+N, g, tauv, i, nu = 500, 7,15,0,100
+T = 1000
 
 gpu = TfSingleNet(N=N,
                   T=T,
                   disp=False,
                   tauv=45,
-                  device='/gpu:1',
-                  spikeMonitor=False,
+                  device='/gpu:0',
+                  spikeMonitor=True,
                   g0=g,
-                  startPlast = 100,
+                  startPlast = 10,
                   nu = nu,
                   NUM_CORES = 1)
 # gpu.input = apple
@@ -44,12 +44,46 @@ gpu.lowspthresh = 1.5
 gpu.weight_step = 10
 gpu.input = np.concatenate([np.zeros(T//2),np.ones(T//2)*50])
 gpu.dt = 0.1
-gpu.ratio = 0.05
-gpu.FACT = 100
+gpu.ratio = 1
+gpu.FACT = 50
 gpu.runTFSimul()
+
+
+# In[4]:
+
+def convertRaster(r):
+    T = r.shape[1]
+    x,y = [],[]
+    for i in range(T):
+        yi = np.ravel(np.where(r[:,i]==1)).tolist()
+        y.append(yi)
+        x.append(np.ones(len(yi))*i)
+    x = np.concatenate(x)
+    y = np.concatenate(y)
+    return x,y
+
+def plotRaster(r):
+    a = 6
+    b = 3
+    x,y = convertRaster(r.transpose())
+    aspect = b/a
+    fig  = plt.figure(figsize=(a,b))
+    ax = fig.add_subplot(111)
+    # ax.imshow(gpu1.raster[100:1100].transpose(), aspect=aspect)
+    ax.plot(x,y, '.', color='grey', alpha=0.1)
+
+
+# In[5]:
+
+plotRaster(gpu.raster)
+
+
+# In[6]:
+
+plt.plot(gpu.gamma)
 
 
 # In[ ]:
 
-py
+
 

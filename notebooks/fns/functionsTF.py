@@ -180,12 +180,17 @@ class TfSingleNet:
                 vv = self.init_float([N, 1], 'spiking')
 
             with tf.name_scope('monitoring'):
-                vm = self.init_float([T], "vm")
-                um = self.init_float([T], "um")
-                vvm = self.init_float([T], "vvm")
-                pm = self.init_float([T], "pm")
+                vmE = self.init_float([T], "vm")
+                vmI = self.init_float([T], "vm")
+                umE = self.init_float([T], "um")
+                umI = self.init_float([T], "um")
+                vvmE = self.init_float([T], "vvm")
+                vvmI = self.init_float([T], "vvm")
+                pmE = self.init_float([T], "pm")
+                pmI = self.init_float([T], "pm")
                 lowspm = self.init_float([T], "lowspm")
-                im = self.init_float([T], "im")
+                imE = self.init_float([T], "im")
+                imI = self.init_float([T], "im")
                 gm = self.init_float([T//self.weight_step + 1], "gm")
                 iEffm = self.init_float([T], "iEffm")
                 spikes = self.init_float([T, N], "spikes")
@@ -299,26 +304,36 @@ class TfSingleNet:
 
             # monitoring
             with tf.name_scope('Monitoring'):
-                vvmean_ = tf.reduce_sum(vv_)
-                vmean_ = tf.reduce_mean(v_)
-                umean_ = tf.reduce_mean(u_)
-                pmean_ = tf.reduce_mean(p_)
+                vvmeanE_ = tf.reduce_sum(vv_*vectE)
+                vvmeanI_ = tf.reduce_sum(vv_*vectI)
+                vmeanE_ = tf.reduce_mean(v_*vectE)
+                vmeanI_ = tf.reduce_mean(v_*vectI)
+                umeanE_ = tf.reduce_mean(u_*vectE)
+                umeanI_ = tf.reduce_mean(u_*vectI)
+                pmeanE_ = tf.reduce_mean(p_*vectE)
+                pmeanI_ = tf.reduce_mean(p_*vectI)
                 lowspmean_ = tf.reduce_mean(LowSp_)
-                imean_ = tf.reduce_mean(I_)
+                imeanE_ = tf.reduce_mean(I_*vectE)
+                imeanI_ = tf.reduce_mean(I_*vectI)
                 iEffm_ = tf.reduce_mean(iEff_)
                 update = tf.group(
-                    tf.scatter_update(vvm, tf.to_int32(sim_index), vvmean_),
-                    tf.scatter_update(vm, tf.to_int32(sim_index), vmean_),
-                    tf.scatter_update(um, tf.to_int32(sim_index), umean_),
-                    tf.scatter_update(pm, tf.to_int32(sim_index), pmean_),
+                    tf.scatter_update(vvmE, tf.to_int32(sim_index), vvmeanE_),
+                    tf.scatter_update(vvmI, tf.to_int32(sim_index), vvmeanI_),
+                    tf.scatter_update(vmE, tf.to_int32(sim_index), vmeanE_),
+                    tf.scatter_update(vmI, tf.to_int32(sim_index), vmeanI_),
+                    tf.scatter_update(umE, tf.to_int32(sim_index), umeanE_),
+                    tf.scatter_update(umI, tf.to_int32(sim_index), umeanI_),
+                    tf.scatter_update(pmE, tf.to_int32(sim_index), pmeanE_),
+                    tf.scatter_update(pmI, tf.to_int32(sim_index), pmeanI_),
                     tf.scatter_update(lowspm, tf.to_int32(sim_index), lowspmean_),
-                    tf.scatter_update(im, tf.to_int32(sim_index), imean_),
+                    tf.scatter_update(imE, tf.to_int32(sim_index), imeanE_),
+                    tf.scatter_update(imI, tf.to_int32(sim_index), imeanI_),
                     tf.scatter_update(iEffm, tf.to_int32(sim_index), iEffm_),
                     sim_index.assign_add(one),
                 )
 
             with tf.name_scope('Weights_monitoring'):
-                gm_ = tf.reduce_sum(wGap*conn)
+                gm_ = tf.reduce_sum(wGap*connII)
                 update_weights = tf.group(
                     tf.scatter_update(gm, tf.to_int32(sim_index / weight_step), gm_),
                 )
@@ -382,16 +397,19 @@ class TfSingleNet:
                     self.wE = wGap.eval()
 
                 # monitoring variables
-                self.vvm = vvm.eval()
-                self.p = pm.eval()
+                self.vvmE = vvmE.eval()
+                self.vvmI = vvmI.eval()
+                self.pE = pmE.eval()
+                self.pI = pmI.eval()
                 self.lowsp = lowspm.eval()
-                self.im = im.eval()
+                self.imE = imE.eval()
+                self.imI = imI.eval()
                 self.iEff = iEffm.eval()
                 self.gamma = gm.eval() / np.sum(nbOfGaps)
                 if self.spikeMonitor:
                     self.raster = spikes.eval()
-                self.burstingActivity = np.mean(self.p)
-                self.spikingActivity = np.mean(self.vvm)
+                self.burstingActivity = np.mean(self.pI)
+                self.spikingActivity = np.mean(self.vvmI)
 
         print('%.2f' % (time.time() - t0))
         self.sess.close()
