@@ -261,3 +261,13 @@ def convertRaster(r):
     x = np.concatenate(x)
     y = np.concatenate(y)
     return x,y
+
+def plotRaster(r):
+    a = 6
+    b = 3
+    x,y = convertRaster(r.transpose())
+    aspect = b/a
+    fig  = plt.figure(figsize=(a,b))
+    ax = fig.add_subplot(111)
+    # ax.imshow(gpu1.raster[100:1100].transpose(), aspect=aspect)
+    ax.plot(x,y, '.', color='grey', alpha=0.1)

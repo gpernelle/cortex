@@ -113,6 +113,10 @@ class TfSingleNet:
         self.FACT = 10
         self.lowspthresh = 1.5
         self.weight_step = 100
+        self.wII = 700
+        self.wEE = 700
+        self.wEI = 1000
+        self.wIE = -1000
         gpu_options = tf.GPUOptions(per_process_gpu_memory_fraction=memfraction)
 
         self.sess = tf.InteractiveSession(config=tf.ConfigProto(
@@ -123,7 +127,7 @@ class TfSingleNet:
         )
         )
         if input is None:
-            self.input = np.ones((T, 1), dtype='int32')
+            self.input = np.ones((T, 1))
 
     def varname(self):
         d = {v: k for k, v in globals().items()}
@@ -212,13 +216,13 @@ class TfSingleNet:
                 wGap_init = (tf.random_normal((N, N), mean=g0, stddev=g0/2, dtype=tf.float32,
                                               seed=None, name=None))
 
-                wII_init = 700 / ((NI*(NI-1))**0.5) / self.dt
+                wII_init = self.wII / ((NI*(NI-1))**0.5) / self.dt
                 if NE>0:
-                    wEE_init = 700 / ((NE*(NE-1))**0.5) / self.dt
+                    wEE_init = self.wEE / ((NE*(NE-1))**0.5) / self.dt
                 else:
                     wEE_init = 0
-                wIE_init = -1000 / (NI*NE-1)**0.5 / self.dt
-                wEI_init = 1000 / (NI*NE-1)**0.5 / self.dt
+                wIE_init = self.wIE / (NI*NE-1)**0.5 / self.dt
+                wEI_init = self.wEI / (NI*NE-1)**0.5 / self.dt
 
                 wGap = tf.Variable(tf.mul(wGap_init, connII))
                 WII = tf.Variable(tf.mul(wII_init, connII))

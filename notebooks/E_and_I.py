@@ -23,19 +23,19 @@ output_notebook()
 from IPython.display import clear_output, Image, display
 
 
-# In[2]:
+# In[10]:
 
-N, g, tauv, i, nu = 500, 7,15,0,100
-T = 1000
+N, g, tauv, i, nu = 300, 7,15,0,100
+T = 4000
 
 gpu = TfSingleNet(N=N,
                   T=T,
                   disp=False,
                   tauv=45,
-                  device='/gpu:0',
+                  device='/cpu:0',
                   spikeMonitor=True,
                   g0=g,
-                  startPlast = 10,
+                  startPlast = 10000,
                   nu = nu,
                   NUM_CORES = 1)
 # gpu.input = apple
@@ -49,36 +49,12 @@ gpu.FACT = 50
 gpu.runTFSimul()
 
 
-# In[4]:
-
-def convertRaster(r):
-    T = r.shape[1]
-    x,y = [],[]
-    for i in range(T):
-        yi = np.ravel(np.where(r[:,i]==1)).tolist()
-        y.append(yi)
-        x.append(np.ones(len(yi))*i)
-    x = np.concatenate(x)
-    y = np.concatenate(y)
-    return x,y
-
-def plotRaster(r):
-    a = 6
-    b = 3
-    x,y = convertRaster(r.transpose())
-    aspect = b/a
-    fig  = plt.figure(figsize=(a,b))
-    ax = fig.add_subplot(111)
-    # ax.imshow(gpu1.raster[100:1100].transpose(), aspect=aspect)
-    ax.plot(x,y, '.', color='grey', alpha=0.1)
-
-
-# In[5]:
+# In[11]:
 
 plotRaster(gpu.raster)
 
 
-# In[6]:
+# In[7]:
 
 plt.plot(gpu.gamma)
 
