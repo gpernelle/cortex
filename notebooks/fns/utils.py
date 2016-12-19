@@ -43,6 +43,7 @@ mpl.rc('axes', labelsize = fontsize)
 mpl.rc('axes', titlesize = fontsize)
 mpl.rc('lines', linewidth=2)
 mpl.rc('axes', facecolor="white")
+mpl.rc('axes', grid=False)
 mpl.rcParams['pdf.fonttype'] = 42
 
 today = datetime.date.today()

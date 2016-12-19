@@ -57,8 +57,11 @@ def makeConn(N, ratio=None, NE=0, NI=0, TF=True):
     connEE = connEE_.reshape(N,1)
     connEE = (connEE @ connEE.T) * conn
 
-    connIE = (conn - (connEE + connII))* np.tril(np.ones((N,N)))
-    connEI = (conn - (connEE + connII))* np.tril(np.ones((N,N))).T
+    connIE = (conn - (connEE + connII))* np.tril(np.ones((N,N))) * conn
+    connEI = (conn - (connEE + connII))* np.tril(np.ones((N,N))).T * conn
+    
+    connIE = connIE.T
+    connEI = connEI.T
 
     if TF:
         conn = tf.Variable(conn, dtype='float32', name='all')
@@ -173,7 +176,7 @@ class TfSingleNet:
             with tf.name_scope('membrane_var'):
                 # Create variables for simulation state
                 u = self.init_float([N, 1], 'u')
-                v = self.init_float([N, 1], 'v')
+                v = self.init_float([N, 1], 'v') - 70
                 # currents
                 iBack = self.init_float([N, 1], 'iBack')
                 iChem = self.init_float([N, 1], 'iChem')
@@ -223,7 +226,8 @@ class TfSingleNet:
                     wEE_init = 0
                 wIE_init = self.wIE / (NI*NE-1)**0.5 / self.dt
                 wEI_init = self.wEI / (NI*NE-1)**0.5 / self.dt
-
+		
+                print('wII, wEE', wII_init, wEE_init)
                 wGap = tf.Variable(tf.mul(wGap_init, connII))
                 WII = tf.Variable(tf.mul(wII_init, connII))
                 WEE = tf.Variable(tf.mul(wEE_init, connEE))
