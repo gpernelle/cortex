@@ -1,6 +1,6 @@
 import fns
 from fns import *
-from fns.functionsTFhardbound import *
+from fns.functionsTF import *
 import sys
 sys.setrecursionlimit(1000000)
 i = 0
@@ -25,17 +25,28 @@ def runFnNoPlast(things):
     print('%d / %d' % (i, len(params)))
     print(things)
     ### input 1: apple
-    gpu1 = TfSingleNet(N=1000, T=T, disp=False, tauv=15, nu=nu, g0=g, ratioNI=0.5,
+    gpu1 = TfSingleNet(N=1000, T=T, disp=False, tauv=15, nu=nu, g0=g, ratioNI=0.2,
                    device=DEVICE, spikeMonitor=False, startPlast=999999)
+    gpu=gpu1
     apple = generateInput2(2, T // dt)
     gpu1.input = apple*0
     gpu1.initWGap = False
     gpu1.dt = 0.1
+    gpu.nuE = 140
+    gpu.nuI = 100
+    gpu.ratio = 1
+    gpu.FACT = 50
+    gpu.wII = -1000
+    gpu.wIE = -3000
+    gpu.wEE = 1000
+    gpu.wEI = 1000
     gpu1.runTFSimul()
 
-    filename = "../data/PhasePlan7/PhasePlan71_nu-%d_g-%.2f_N-%d_input-%s_T-%d" % (nu, g, N, 'noise', T)
+    filename = "../data/PhasePlan7/PhasePlan81_nu-%d_g-%.2f_N-%d_input-%s_T-%d" % (nu, g, N, 'noise', T)
     with open(filename, 'wb') as f:
-        np.savez(f, vvm=gpu1.vvm, i=gpu1.im, burst=gpu1.burstingActivity, spike=gpu1.spikingActivity)
+        np.savez(f, vvmE=gpu1.vvmE, vvmI=gpu1.vvmI, vmE=gpu1.vmE, vmI=gpu1.vmI,
+                 iI=gpu1.imI,  iE=gpu1.imE,
+                 burst=gpu1.burstingActivity, spike=gpu1.spikingActivity)
     del gpu1
     gc.collect()
 

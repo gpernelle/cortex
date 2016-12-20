@@ -82,7 +82,6 @@ def makeVect(N, ratio=None, NE=0, NI=0):
     vConnE = (1-vConnI)
     return tf.Variable(vConnE, dtype='float32'), tf.Variable(vConnI, dtype='float32')
 
-
 class TfSingleNet:
 
     def __init__(self, N=400,
@@ -112,6 +111,8 @@ class TfSingleNet:
         self.startPlast = startPlast
         self.raster = []
         self.nu = nu
+        self.nuI = nu
+        self.nuE = nu
         self.ratio = 1
         self.FACT = 10
         self.lowspthresh = 1.5
@@ -176,10 +177,12 @@ class TfSingleNet:
             with tf.name_scope('membrane_var'):
                 # Create variables for simulation state
                 u = self.init_float([N, 1], 'u')
-                v = self.init_float([N, 1], 'v') - 70
+#                 v = self.init_float([N, 1], 'v')
+                v = tf.Variable(tf.ones([N,1])*-70, name='v')
                 # currents
                 iBack = self.init_float([N, 1], 'iBack')
                 iChem = self.init_float([N, 1], 'iChem')
+                I = tf.Variable(tf.zeros([N,1]), name='I')
                 input = tf.cast(tf.constant(self.input, name="input"), tf.float32)
 
             with tf.name_scope('spiking_bursting'):
@@ -196,8 +199,10 @@ class TfSingleNet:
                 pmE = self.init_float([T], "pm")
                 pmI = self.init_float([T], "pm")
                 lowspm = self.init_float([T], "lowspm")
-                imE = self.init_float([T], "im")
-                imI = self.init_float([T], "im")
+                imE = self.init_float([T], "imE")
+                imI = self.init_float([T], "imI")
+                icmE = self.init_float([T], "icmE")
+                icmI = self.init_float([T], "icmI")
                 gm = self.init_float([T//self.weight_step + 1], "gm")
                 iEffm = self.init_float([T], "iEffm")
                 spikes = self.init_float([T, N], "spikes")
@@ -227,12 +232,13 @@ class TfSingleNet:
                 wIE_init = self.wIE / (NI*NE-1)**0.5 / self.dt
                 wEI_init = self.wEI / (NI*NE-1)**0.5 / self.dt
 		
-                print('wII, wEE', wII_init, wEE_init)
+                # print('wII, wEE', wII_init, wEE_init)
                 wGap = tf.Variable(tf.mul(wGap_init, connII))
                 WII = tf.Variable(tf.mul(wII_init, connII))
                 WEE = tf.Variable(tf.mul(wEE_init, connEE))
                 WEI = tf.Variable(tf.mul(wEI_init, connEI))
                 WIE = tf.Variable(tf.mul(wIE_init, connIE))
+                
 
                 # plasticity learning rates
                 A_LTD_ = 2.45e-5 * self.FACT * 400 / N
@@ -243,6 +249,11 @@ class TfSingleNet:
                 # stimulation
 
                 TImean = tf.constant(self.nu * 1.0, name="mean_input_current", dtype=tf.float32)
+                if self.nuI != self.nuE:
+                    TImean = tf.constant(self.nuI * 1.0, name="mean_input_current", dtype=tf.float32)*vectI + \
+                            tf.constant(self.nuE * 1.0, name="mean_input_current", dtype=tf.float32)*vectE
+                    
+                
                 # timestep
                 dt = tf.constant(self.dt * 1.0, name="timestep", dtype=tf.float32)
                 tauv = tf.constant(self.tauv*1.0, dtype=tf.float32)
@@ -253,6 +264,8 @@ class TfSingleNet:
             sim_index = tf.Variable(0.0, name="sim_index")
             one = tf.Variable(1.0)
             ones = tf.ones((1, N))
+            
+            
 
         #################################################################################
         ## Computation
@@ -263,8 +276,8 @@ class TfSingleNet:
                 ps([WII, vv, vectI])
 
                 iChem_ = iChem + \
-                         tf.mul( dt / 5 * (-iChem + tf.matmul(WII + WEI, tf.to_float(vv))), vectI) + \
-                         tf.mul( dt / 3 * (-iChem + tf.matmul(WEE + WIE, tf.to_float(vv))), vectE)
+                          dt / 5 * (-iChem + tf.matmul(WII + WEI, tf.to_float(vv))) + \
+                         dt / 10 * (-iChem + tf.matmul(WEE + WIE, tf.to_float(vv)))
                 # current
                 iBack_ = iBack + dt / 5 * (-iBack + tf.random_normal((N, 1), mean=0.0, stddev=1.0, dtype=tf.float32,
                                                                      seed=None, name=None))
@@ -273,7 +286,7 @@ class TfSingleNet:
                 # input to network: colored noise + external input
                 iEff_ = iBack_ * scaling + input_ + TImean
 
-                iGap_ = tf.matmul(wGap, v) - tf.mul(tf.reshape(tf.reduce_sum(wGap, 0), (N, 1)), v)
+                iGap_ = (tf.matmul(wGap, v) - tf.mul(tf.reshape(tf.reduce_sum(wGap, 0), (N, 1)), v))*vectI
 
                 I_ = iGap_ + iChem_ + iEff_
                 ps([I_, iGap_, iEff_, input_, iBack_, iChem_])
@@ -282,7 +295,7 @@ class TfSingleNet:
             with tf.name_scope('Izhikevich'):
                 # voltage
                 v_ = tf.mul(v + dt / tauv * (tf.mul((v + 60), (v + 50)) - 20 * u + 8 * I_), vectI) + \
-                    tf.mul(v + dt / 100 * (0.7 *  (v + 60) * (v + 40) - u + I_ ), vectE)
+                    tf.mul(v + dt / 10 * (0.7 *  (v + 60) * (v + 40) - u + I_ ), vectE)
                 # adaptation
                 u_ = u + tf.mul(dt * 0.044 * (v_ + 55 - u), vectI) + \
                     tf.mul(dt * 0.03 * (-2 * (v + 60) - u), vectE)
@@ -323,6 +336,8 @@ class TfSingleNet:
                 lowspmean_ = tf.reduce_mean(LowSp_)
                 imeanE_ = tf.reduce_mean(I_*vectE)
                 imeanI_ = tf.reduce_mean(I_*vectI)
+                icmeanE_ = tf.reduce_mean(iChem_*vectE)
+                icmeanI_ = tf.reduce_mean(iChem_*vectI)
                 iEffm_ = tf.reduce_mean(iEff_)
                 update = tf.group(
                     tf.scatter_update(vvmE, tf.to_int32(sim_index), vvmeanE_),
@@ -336,6 +351,8 @@ class TfSingleNet:
                     tf.scatter_update(lowspm, tf.to_int32(sim_index), lowspmean_),
                     tf.scatter_update(imE, tf.to_int32(sim_index), imeanE_),
                     tf.scatter_update(imI, tf.to_int32(sim_index), imeanI_),
+                    tf.scatter_update(icmE, tf.to_int32(sim_index), icmeanE_),
+                    tf.scatter_update(icmI, tf.to_int32(sim_index), icmeanI_),
                     tf.scatter_update(iEffm, tf.to_int32(sim_index), iEffm_),
                     sim_index.assign_add(one),
                 )
@@ -353,11 +370,12 @@ class TfSingleNet:
 
             # Operation to update the state
             step = tf.group(
+                iChem.assign(iChem_),
+                iBack.assign(iBack_),
+                LowSp.assign(LowSp_),
                 v.assign(v_),
                 vv.assign(vv_),
                 u.assign(u_),
-                iBack.assign(iBack_),
-                LowSp.assign(LowSp_),
             )
 
             plast = tf.group(
@@ -371,6 +389,11 @@ class TfSingleNet:
 
             # initialize the graph
             tf.global_variables_initializer().run()
+            
+            self.WII = WII.eval()
+            self.WEE = WEE.eval()
+            self.WIE = WIE.eval()
+            self.WEI = WEI.eval()
 
             t0 = time.time()
             for i in range(T):
@@ -407,21 +430,25 @@ class TfSingleNet:
                 # monitoring variables
                 self.vvmE = vvmE.eval()
                 self.vvmI = vvmI.eval()
+                self.vmE = vmE.eval()
+                self.vmI = vmI.eval()
+                self.umE = umE.eval()
+                self.umI = umI.eval()
                 self.pE = pmE.eval()
                 self.pI = pmI.eval()
                 self.lowsp = lowspm.eval()
                 self.imE = imE.eval()
                 self.imI = imI.eval()
+                self.icmE = icmE.eval()
+                self.icmI = icmI.eval()
                 self.iEff = iEffm.eval()
                 self.gamma = gm.eval() / np.sum(nbOfGaps)
                 if self.spikeMonitor:
                     self.raster = spikes.eval()
                 self.burstingActivity = np.mean(self.pI)
                 self.spikingActivity = np.mean(self.vvmI)
-
         print('%.2f' % (time.time() - t0))
         self.sess.close()
-
 
 '''
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

@@ -1,7 +1,7 @@
 
 # coding: utf-8
 
-# In[71]:
+# In[1]:
 
 import fns
 from fns import *
@@ -23,13 +23,13 @@ output_notebook()
 from IPython.display import clear_output, Image, display
 
 
-# In[72]:
+# In[2]:
 
 def f():
     plt.figure(figsize=(20,3), linewidth=0.1)
 
 
-# In[73]:
+# In[3]:
 
 
 class TfSingleNet:
@@ -399,9 +399,9 @@ class TfSingleNet:
         self.sess.close()
 
 
-# In[78]:
+# In[4]:
 
-N, g, tauv, i, nu = 300, 7,15,0,100
+N, g, tauv, i, nu = 12000, 7,15,0,100
 T = 20300
 
 gpu = TfSingleNet(N=N,
@@ -431,7 +431,7 @@ gpu.wEI = 1000
 gpu.runTFSimul()
 
 
-# In[80]:
+# In[5]:
 
 
 # plotRaster(gpu.raster)
