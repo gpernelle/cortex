@@ -31,7 +31,7 @@ def runFn(things):
                       startPlast = 50,
                       nu = nu,
                       ratioNI=0.2,
-                      memfraction=0.1,
+                      memfraction=0.2,
                       NUM_CORES = 1)
     # gpu.input = apple
     gpu.ratio = ratio
@@ -40,16 +40,15 @@ def runFn(things):
     gpu.runTFSimul()
 
 
-    filename = "../data/GetGammaSteadyState/GetSteadyState100-tauv-%d_g-%d_N-%d_T-%d_nu-%d_ratio-%.2f" % (tauv, g, N, T, nu, ratio)
+    filename = "../data/GetGammaSteadyState/GetSteadyState200-tauv-%d_g-%d_N-%d_T-%d_nu-%d_ratio-%.2f" % (tauv, g, N, T, nu, ratio)
     with open(filename, 'wb') as f:
-        four = fourier(gpu.vvmI[100:])
         np.savez(f,
                  vvmE = gpu.vvmE,
                  vvmI = gpu.vvmI,
+                 vmE = gpu.vmE,
+                 vmI = gpu.vmI,
                  imE = gpu.imE,
                  imI = gpu.imI,
-                 freq = four[0],
-                 power = four[1],
                  gamma = gpu.gamma,
                 )
     del gpu
