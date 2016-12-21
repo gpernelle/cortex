@@ -6,7 +6,7 @@ sys.setrecursionlimit(1000000)
 i = 0
 params = []
 for T in [8000]:
-        for N in [1000]:
+        for N in [300]:
             for g in np.arange(0, 10, 0.5):
                 for nu in np.arange(0, 200, 5):
                         i += 1
@@ -32,17 +32,17 @@ def runFnNoPlast(things):
     gpu1.input = apple*0
     gpu1.initWGap = False
     gpu1.dt = 0.1
-    gpu.nuE = 140
-    gpu.nuI = 100
+    gpu.nuI = nu
+    gpu.nuE = nu
     gpu.ratio = 1
     gpu.FACT = 50
-    gpu.wII = -1000
-    gpu.wIE = -3000
+    gpu.wII = -700
+    gpu.wIE = -4000
     gpu.wEE = 1000
-    gpu.wEI = 1000
+    gpu.wEI = 1400
     gpu1.runTFSimul()
 
-    filename = "../data/PhasePlan7/PhasePlan81_nu-%d_g-%.2f_N-%d_input-%s_T-%d" % (nu, g, N, 'noise', T)
+    filename = "../data/PhasePlan7/PhasePlan101_nu-%d_g-%.2f_N-%d_input-%s_T-%d" % (nu, g, N, 'noise', T)
     with open(filename, 'wb') as f:
         np.savez(f, vvmE=gpu1.vvmE, vvmI=gpu1.vvmI, vmE=gpu1.vmE, vmI=gpu1.vmI,
                  iI=gpu1.imI,  iE=gpu1.imE,

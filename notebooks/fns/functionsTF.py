@@ -12,7 +12,7 @@ from tensorflow.python.client import timeline
 # flags.DEFINE_string('data_dir', '/tmp/data', 'Directory for storing data')
 
 print("*"*80)
-print("functionsTFhardbound loaded!")
+print("functionsTF loaded!")
 print("*"*80)
 G = 12
 DEBUG = False
@@ -114,13 +114,16 @@ class TfSingleNet:
         self.nuI = nu
         self.nuE = nu
         self.ratio = 1
-        self.FACT = 10
+        self.ratioNI = ratioNI
+        self.FACT = 50
         self.lowspthresh = 1.5
         self.weight_step = 100
-        self.wII = 700
-        self.wEE = 700
-        self.wEI = 1000
-        self.wIE = -1000
+        self.wII = -700
+        self.wIE = -4000
+        self.wEE = 1000
+        self.wEI = 1400
+        self.barname = '1'
+        self.barposition=0
         gpu_options = tf.GPUOptions(per_process_gpu_memory_fraction=memfraction)
 
         self.sess = tf.InteractiveSession(config=tf.ConfigProto(
@@ -276,8 +279,8 @@ class TfSingleNet:
                 ps([WII, vv, vectI])
 
                 iChem_ = iChem + \
-                          dt / 5 * (-iChem + tf.matmul(WII + WEI, tf.to_float(vv))) + \
-                         dt / 10 * (-iChem + tf.matmul(WEE + WIE, tf.to_float(vv)))
+                          dt / 10 * (-iChem + tf.matmul(WII + WEI, tf.to_float(vv))) + \
+                         dt / 40 * (-iChem + tf.matmul(WEE + WIE, tf.to_float(vv)))
                 # current
                 iBack_ = iBack + dt / 5 * (-iBack + tf.random_normal((N, 1), mean=0.0, stddev=1.0, dtype=tf.float32,
                                                                      seed=None, name=None))
@@ -333,7 +336,7 @@ class TfSingleNet:
                 umeanI_ = tf.reduce_mean(u_*vectI)
                 pmeanE_ = tf.reduce_mean(p_*vectE)
                 pmeanI_ = tf.reduce_mean(p_*vectI)
-                lowspmean_ = tf.reduce_mean(LowSp_)
+                lowspmean_ = tf.reduce_mean(LowSp_*vectI)
                 imeanE_ = tf.reduce_mean(I_*vectE)
                 imeanI_ = tf.reduce_mean(I_*vectI)
                 icmeanE_ = tf.reduce_mean(iChem_*vectE)
@@ -396,7 +399,7 @@ class TfSingleNet:
             self.WEI = WEI.eval()
 
             t0 = time.time()
-            for i in range(T):
+            for i in trange(T, desc=self.barname, position=self.barposition):
 
                 # Step simulation
                 ops = {'plast': [step, plast, update],
@@ -491,7 +494,7 @@ class TfConnEvolveNet:
             inter_op_parallelism_threads=NUM_CORES,
             intra_op_parallelism_threads=NUM_CORES,
             gpu_options = tf.GPUOptions(per_process_gpu_memory_fraction=memfraction,
-                                        allow_growth=True),
+                                        allow_growth=False),
         )
         )
         if input is None:

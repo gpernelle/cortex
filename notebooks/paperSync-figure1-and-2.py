@@ -569,6 +569,11 @@ plt.plot(a['i2N2'][start:start+d])
 
 # In[5]:
 
+1
+
+
+# In[4]:
+
 df = pd.DataFrame(columns=('nu', 'g', 'T', 'N', 'f', 'p', 'burst', 'spike', 'ratio'
                           ) )
 i=-1
@@ -579,7 +584,7 @@ s0 = 100
 sigma = 8
 params=[]
 for T in [8000]:
-        for N in [1000]:
+        for N in [300]:
             for g in np.arange(0, 10, 0.5):
                 for nu in np.arange(0, 200, 5):
                         i+=1
@@ -587,9 +592,9 @@ for T in [8000]:
 
 def getDF(params):
     T, N, g, nu, i = params
-    filename = "../data/PhasePlan7/PhasePlan71_nu-%d_g-%.2f_N-%d_input-%s_T-%d" % (nu, g, N, 'noise', T)
+    filename = "../data/PhasePlan7/PhasePlan101_nu-%d_g-%.2f_N-%d_input-%s_T-%d" % (nu, g, N, 'noise', T)
     a = np.load(filename)
-    I = a['vvm']
+    I = a['vvmE']
 
     # compute frequency and power with fourier transform of the lfp (mean current)
     f = fourier(I[10:])[0]
@@ -605,15 +610,15 @@ for r in res:
     df.loc[r[0]]=r[1:]
 
 
-# In[7]:
+# In[15]:
 
 cols = ['f', 'p']
 # sns.set_context("paper", font_scale=1.5, rc={"lines.linewidth": 2.5})
 # df = df_[(df_['g']<3)&(df_['nu']<20)]
 def setLabels(fig):
     color = '#FF6898'
-    fig.text(2*2, 20, '#', fontweight='bold', fontsize=30, color=color)
-    fig.text(7*2, 20, '*', fontweight='bold', fontsize=30, color=color)
+    fig.text(3*2, 20, '#', fontweight='bold', fontsize=30, color=color)
+    fig.text(6*2, 20, '*', fontweight='bold', fontsize=30, color=color)
     fig.set_ylabel(r'Network drive, $\nu$')
     fig.set_xlabel(r'Gap-junction coupling, $\gamma$')
     
@@ -621,20 +626,23 @@ def setLabels(fig):
 fig = plotHeatmap(df, col='f', y='nu', x='g', vmax=100,rasterized=True,
                   title='Frequency of strongest Fourier component' )
 setLabels(fig)
+plt.xlim([2*2,7*2])
 plt.tight_layout()
-plt.savefig(PAPER + 'figure1-frequency.pdf', bbox_inches='tight', transparent=True)
+plt.savefig(PAPER + 'figure1-frequency.eps', bbox_inches='tight', transparent=True)
 
 fig = plotHeatmap(df, col='p', y='nu', x='g', rasterized=True,
                   title='Power of strongest Fourier component', cmap='RdBu_r')
 setLabels(fig)
+plt.xlim([2*2,7*2])
 plt.tight_layout()
-plt.savefig(PAPER + 'figure1-power.pdf', bbox_inches='tight', transparent=True)
+plt.savefig(PAPER + 'figure1-power.eps', bbox_inches='tight', transparent=True)
 
 fig = plotHeatmap(df, col='ratio', y='nu', x='g', rasterized=True,
                   title='Mean Activity Ratio (bursts/spikes)', cmap='viridis')
 setLabels(fig)
+plt.xlim([2*2,7*2])
 plt.tight_layout()
-plt.savefig(PAPER + 'figure1-ratio.pdf', bbox_inches='tight',  transparent=True)
+plt.savefig(PAPER + 'figure1-ratio.eps', bbox_inches='tight',  transparent=True)
 # plotHeatmap(df, col='burst', y='nu', x='g', title='power')
 
 

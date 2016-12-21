@@ -1,11 +1,11 @@
 
 # coding: utf-8
 
-# In[19]:
+# In[2]:
 
 import fns
 from fns import *
-from fns.functionsTFhardbound import *
+from fns.functionsTF import *
 get_ipython().magic('matplotlib inline')
 
 today = datetime.date.today()
@@ -23,14 +23,14 @@ output_notebook()
 from IPython.display import clear_output, Image, display
 
 
-# In[4]:
+# In[3]:
 
 PAPER = os.path.expanduser('~/Dropbox/ICL-2014/Presentations/2016-10-11-GJ-sync-paper/figures/')
 
 
-# In[20]:
+# In[4]:
 
-gr = Graph()
+# gr = Graph()
 
 
 # In[5]:
@@ -39,14 +39,18 @@ plt.style.use(['seaborn-paper'])
 sns.set_context("paper", font_scale=1.5, rc={"lines.linewidth": 2.5})
 
 
-# In[17]:
+# In[14]:
 
 gR=[]
 ratio = 1
-path = '../data/GetGammaSteadyState/GetSteadyState100'
-for k in np.arange(0,200,10):
-    a = np.load(path + '-tauv-15_g-10_N-100_T-40000_nu-%d_ratio-%.2f'%(k,ratio))
-    plt.plot(a['gamma'], c=)
+path = '../data/GetGammaSteadyState/GetSteadyState500'
+for nu in np.arange(0,200,10):
+    filepath = path + '-tauv-15_g-3_N-1000_T-10000_nu-%d_ratio-%.2f'%(nu,ratio)
+    try:
+        a = np.load(filepath)
+    except:
+        print('can\'t open %s'%filepath)
+    plt.plot(a['gamma'])
     gR.append(a['gamma'])
 
 

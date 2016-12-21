@@ -224,7 +224,7 @@ class TfSingleNet:
                 # Discretized PDE update rules
                 ps([WII, vv, vectI])
 
-                iChem_ = iChem +                           dt / 5 * (-iChem + tf.matmul(WII + WEI, tf.to_float(vv))) +                          dt / 10 * (-iChem + tf.matmul(WEE + WIE, tf.to_float(vv)))
+                iChem_ = iChem +                           dt / 10 * (-iChem + tf.matmul(WII + WEI, tf.to_float(vv))) +                          dt / 40 * (-iChem + tf.matmul(WEE + WIE, tf.to_float(vv)))
                 # current
                 iBack_ = iBack + dt / 5 * (-iBack + tf.random_normal((N, 1), mean=0.0, stddev=1.0, dtype=tf.float32,
                                                                      seed=None, name=None))
@@ -399,19 +399,19 @@ class TfSingleNet:
         self.sess.close()
 
 
-# In[4]:
+# In[12]:
 
-N, g, tauv, i, nu = 12000, 7,15,0,100
-T = 20300
+N, g, tauv, i, nu = 300, 0,15,0,100
+T = 1000
 
 gpu = TfSingleNet(N=N,
                   T=T,
                   disp=False,
                   tauv=45,
                   device='/gpu:0',
-                  spikeMonitor=False,
+                  spikeMonitor=True,
                   g0=g,
-                  startPlast = 10,
+                  startPlast = 100000,
                   NUM_CORES = 1)
 # gpu.input = apple
 print(gpu.lowspthresh)
@@ -424,17 +424,17 @@ gpu.nuE = 140
 gpu.nuI = 100
 gpu.ratio = 1
 gpu.FACT = 50
-gpu.wII = -1000
-gpu.wIE = -3000
+gpu.wII = -700
+gpu.wIE = -4000
 gpu.wEE = 1000
-gpu.wEI = 1000
+gpu.wEI = 1400
 gpu.runTFSimul()
 
 
-# In[5]:
+# In[13]:
 
 
-# plotRaster(gpu.raster)
+plotRaster(gpu.raster)
 # plt.xlim([19000,20000])
 f()
 plt.plot(gpu.icmI, label='I')
