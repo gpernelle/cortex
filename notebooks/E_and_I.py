@@ -7,6 +7,7 @@ import fns
 from fns import *
 from fns.functionsTF import *
 get_ipython().magic('matplotlib inline')
+from tqdm import tnrange, tqdm_notebook
 
 today = datetime.date.today()
 todayStr = '%04d%02d%02d' % (today.year, today.month, today.day)
@@ -29,7 +30,7 @@ def f():
     plt.figure(figsize=(20,3), linewidth=0.1)
 
 
-# In[3]:
+# In[19]:
 
 
 class TfSingleNet:
@@ -128,7 +129,7 @@ class TfSingleNet:
                 # Create variables for simulation state
                 u = self.init_float([N, 1], 'u')
 #                 v = self.init_float([N, 1], 'v')
-                v = tf.Variable(tf.ones([N,1])*-70, name='v')
+                v = tf.Variable(tf.random_normal([N,1], mean=-50, stddev=30, name='v'))
                 # currents
                 iBack = self.init_float([N, 1], 'iBack')
                 iChem = self.init_float([N, 1], 'iChem')
@@ -254,7 +255,7 @@ class TfSingleNet:
             # bursting
             with tf.name_scope('bursting'):
                 LowSp_ = (LowSp + dt / 8.0 * (vv_ * 8.0 / dt - LowSp))
-                p_ = tf.to_float(tf.greater(LowSp_, 1.5))
+                p_ = tf.to_float(tf.greater(LowSp_, 1.1))
 
             # plasticity
             with tf.name_scope('plasticity'):
@@ -340,7 +341,7 @@ class TfSingleNet:
             self.WEI = WEI.eval()
 
             t0 = time.time()
-            for i in range(T):
+            for i in tnrange(T):
 
                 # Step simulation
                 ops = {'plast': [step, plast, update],
@@ -399,10 +400,23 @@ class TfSingleNet:
         self.sess.close()
 
 
-# In[12]:
+# In[ ]:
 
-N, g, tauv, i, nu = 300, 0,15,0,100
-T = 1000
+def plotRaster(r):
+    a = 17
+    b = 3
+    x,y = convertRaster(r.transpose())
+    aspect = b/a
+    fig  = plt.figure(figsize=(a,b))
+    ax = fig.add_subplot(111)
+    # ax.imshow(gpu1.raster[100:1100].transpose(), aspect=aspect)
+    ax.plot(x,y, '.', color='black', alpha=1)
+
+
+# In[72]:
+
+N, g, tauv, i, nu = 1000, 10,15,0,100
+T = 500
 
 gpu = TfSingleNet(N=N,
                   T=T,
@@ -411,31 +425,31 @@ gpu = TfSingleNet(N=N,
                   device='/gpu:0',
                   spikeMonitor=True,
                   g0=g,
-                  startPlast = 100000,
+                  startPlast = 1000,
                   NUM_CORES = 1)
 # gpu.input = apple
 print(gpu.lowspthresh)
-gpu.lowspthresh = 1.5
 gpu.weight_step = 10
 # gpu.input = np.concatenate([np.zeros(T//2),np.ones(T//2)*50])
 gpu.input = np.zeros(T)
-gpu.dt = 0.1000
-gpu.nuE = 140
-gpu.nuI = 100
+gpu.dt = 0.1
+gpu.nuI = 200
+gpu.nuE = gpu.nuI
 gpu.ratio = 1
-gpu.FACT = 50
-gpu.wII = -700
-gpu.wIE = -4000
+gpu.FACT = 500
+gpu.wII = -100
+gpu.wIE = -400
 gpu.wEE = 1000
 gpu.wEI = 1400
 gpu.runTFSimul()
 
 
-# In[13]:
+# In[73]:
 
 
 plotRaster(gpu.raster)
-# plt.xlim([19000,20000])
+# plt.xlim([900,1000])
+plt.ylim([900,910])
 f()
 plt.plot(gpu.icmI, label='I')
 plt.plot(gpu.icmE, label='E')
@@ -450,6 +464,9 @@ plt.legend()
 
 f()
 plt.plot(gpu.gamma)
+
+f()
+plt.plot(gpu.lowsp)
 
 
 # In[13]:

@@ -313,7 +313,7 @@ class TfSingleNet:
             # bursting
             with tf.name_scope('bursting'):
                 LowSp_ = (LowSp + dt / 8.0 * (vv_ * 8.0 / dt - LowSp))
-                p_ = tf.to_float(tf.greater(LowSp_, 1.5))
+                p_ = tf.to_float(tf.greater(LowSp_, 1.3))
 
             # plasticity
             with tf.name_scope('plasticity'):
