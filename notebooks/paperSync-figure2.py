@@ -1,7 +1,7 @@
 
 # coding: utf-8
 
-# In[1]:
+# In[2]:
 
 import fns
 from fns import *
@@ -23,35 +23,36 @@ output_notebook()
 from IPython.display import clear_output, Image, display
 
 
-# In[2]:
+# In[3]:
 
 PAPER = os.path.expanduser('~/Dropbox/ICL-2014/Presentations/2016-10-11-GJ-sync-paper/figures/')
 
 
-# In[3]:
+# In[4]:
 
 # gr = Graph()
 
 
-# In[4]:
+# In[5]:
 
 plt.style.use(['seaborn-paper'])
 sns.set_context("paper", font_scale=1.5, rc={"lines.linewidth": 2.5})
 
 
-# In[41]:
+# In[49]:
 
 gR=[]
-ratio = 1
-path = '../data/GetGammaSteadyState/GetSteadyState700'
+ratio = 1.5
+path = '../data/GetGammaSteadyState/GetSteadyState9900'
 for nu in np.arange(0,200,50):
-    filepath = path + '-tauv-15_g-20_N-1000_T-20000_nu-%d_ratio-%.2f'%(nu,ratio)
-    try:
-        a = np.load(filepath)
-        plt.plot(a['gamma'][:-2], c='black',alpha=(nu+20)/200)
-        gR.append(a['gamma'])
-    except:
-        print('can\'t open %s'%filepath)
+    for g in [4,10]:
+        filepath = path + '-tauv-15_g-%d_N-300_T-20000_nu-%d_ratio-%.2f'%(g, nu,ratio)
+        try:
+            a = np.load(filepath)
+            plt.plot(a['gamma'][:-2], c='black',alpha=(nu+20)/200)
+            gR.append(a['gamma'])
+        except:
+            print('can\'t open %s'%filepath)
 
 
 # In[6]:

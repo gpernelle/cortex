@@ -1,7 +1,7 @@
 
 # coding: utf-8
 
-# In[1]:
+# In[2]:
 
 import fns
 from fns import *
@@ -24,13 +24,13 @@ output_notebook()
 from IPython.display import clear_output, Image, display
 
 
-# In[2]:
+# In[3]:
 
 def f():
     plt.figure(figsize=(20,3), linewidth=0.1)
 
 
-# In[19]:
+# In[8]:
 
 
 class TfSingleNet:
@@ -75,6 +75,7 @@ class TfSingleNet:
         gpu_options = tf.GPUOptions(per_process_gpu_memory_fraction=memfraction)
 
         self.sess = tf.InteractiveSession(config=tf.ConfigProto(
+                allow_soft_placement=True,
             inter_op_parallelism_threads=NUM_CORES,
             intra_op_parallelism_threads=NUM_CORES,
             gpu_options=gpu_options,
@@ -255,7 +256,7 @@ class TfSingleNet:
             # bursting
             with tf.name_scope('bursting'):
                 LowSp_ = (LowSp + dt / 8.0 * (vv_ * 8.0 / dt - LowSp))
-                p_ = tf.to_float(tf.greater(LowSp_, 1.1))
+                p_ = tf.to_float(tf.greater(LowSp_, 1.5))
 
             # plasticity
             with tf.name_scope('plasticity'):
@@ -400,7 +401,7 @@ class TfSingleNet:
         self.sess.close()
 
 
-# In[ ]:
+# In[9]:
 
 def plotRaster(r):
     a = 17
@@ -413,15 +414,15 @@ def plotRaster(r):
     ax.plot(x,y, '.', color='black', alpha=1)
 
 
-# In[72]:
+# In[17]:
 
-N, g, tauv, i, nu = 1000, 10,15,0,100
-T = 500
+N, g, tauv, i, nu = 1000, 2,15,0,100
+T = 1000
 
 gpu = TfSingleNet(N=N,
                   T=T,
                   disp=False,
-                  tauv=45,
+                  tauv=15,
                   device='/gpu:0',
                   spikeMonitor=True,
                   g0=g,
@@ -433,19 +434,18 @@ gpu.weight_step = 10
 # gpu.input = np.concatenate([np.zeros(T//2),np.ones(T//2)*50])
 gpu.input = np.zeros(T)
 gpu.dt = 0.1
-gpu.nuI = 200
-gpu.nuE = gpu.nuI
+gpu.nuI = 100
+gpu.nuE = gpu.nuI 
 gpu.ratio = 1
 gpu.FACT = 500
-gpu.wII = -100
-gpu.wIE = -400
+gpu.wII = 800
+gpu.wIE = -3000
 gpu.wEE = 1000
-gpu.wEI = 1400
+gpu.wEI = 3000
 gpu.runTFSimul()
 
 
-# In[73]:
-
+# In[18]:
 
 plotRaster(gpu.raster)
 # plt.xlim([900,1000])
@@ -466,7 +466,7 @@ f()
 plt.plot(gpu.gamma)
 
 f()
-plt.plot(gpu.lowsp)
+plt.plot(gpu.pI)
 
 
 # In[13]:

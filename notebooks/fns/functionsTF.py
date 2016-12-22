@@ -208,7 +208,10 @@ class TfSingleNet:
                 icmI = self.init_float([T], "icmI")
                 gm = self.init_float([T//self.weight_step + 1], "gm")
                 iEffm = self.init_float([T], "iEffm")
-                spikes = self.init_float([T, N], "spikes")
+                if self.spikeMonitor:
+                    spikes = self.init_float([T, N], "spikes")
+                else:
+                    spikes = self.init_float([T,10], "spikes_dummy_var")
 
             with tf.name_scope('synaptic_connections'):
                 # synaptics connection
@@ -313,7 +316,7 @@ class TfSingleNet:
             # bursting
             with tf.name_scope('bursting'):
                 LowSp_ = (LowSp + dt / 8.0 * (vv_ * 8.0 / dt - LowSp))
-                p_ = tf.to_float(tf.greater(LowSp_, 1.3))
+                p_ = tf.to_float(tf.greater(LowSp_, 1.5))
 
             # plasticity
             with tf.name_scope('plasticity'):
@@ -366,10 +369,10 @@ class TfSingleNet:
                     tf.scatter_update(gm, tf.to_int32(sim_index / weight_step), gm_),
                 )
 
-            with tf.name_scope('Raster_Plot'):
-                spike_update = tf.group(
-                    tf.scatter_update(spikes, tf.to_int32(sim_index), tf.reshape((vv_), (N,))),
-                )
+            # with tf.name_scope('Raster_Plot'):
+            #     spike_update = tf.group(
+            #         tf.scatter_update(spikes, tf.to_int32(sim_index), tf.reshape((vv_), (N,))),
+            #     )
 
             # Operation to update the state
             step = tf.group(
