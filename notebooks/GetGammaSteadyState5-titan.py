@@ -5,18 +5,18 @@ from fns.functionsTF import *
 nodes = 8
 i=0
 params = []
-N = 300
-for nu in range(0,200,50):
+N = 1000
+for nu in range(0,201,50):
     for tauv in [15]:
-            for ratio in [1.5]:
-                for g in [4,10]:
+            for ratio in [0.01,0.1,1,1.5,2,10,100]:
+                for g in [0,5,10]:
                     i+=1
                     params.append([N, g, tauv, i, nu, ratio])
 
 ## colored noise
 def runFn(things):
     N, g, tauv, i, nu, ratio = things
-    T = 20000
+    T = 50000
     # print(things)
     ### input: colored noise
     gpu = TfSingleNet(N=N,
@@ -25,7 +25,7 @@ def runFn(things):
                       device='/cpu:0',
                       spikeMonitor=False,
                       g0=g,
-                      startPlast = 1000,
+                      startPlast = 2000,
                       ratioNI=0.2,
                       memfraction=0.15,
 
@@ -37,15 +37,15 @@ def runFn(things):
     gpu.dt = 0.1
     gpu.nuI = nu
     gpu.nuE = nu
-    gpu.FACT = 500
-    gpu.wII = 800
-    gpu.wIE = -2000
+    gpu.FACT = 10
+    gpu.wII = 600
+    gpu.wIE = -3000
     gpu.wEE = 1000
     gpu.wEI = 3000
     gpu.runTFSimul()
 
 
-    filename = "../data/GetGammaSteadyState/GetSteadyState9900-tauv-%d_g-%d_N-%d_T-%d_nu-%d_ratio-%.2f" % (tauv, g, N, T, nu, ratio)
+    filename = "../data/GetGammaSteadyState/GetSteadyState110-tauv-%d_g-%d_N-%d_T-%d_nu-%d_ratio-%.2f" % (tauv, g, N, T, nu, ratio)
     with open(filename, 'wb') as f:
         np.savez(f,
                  vvmE = gpu.vvmE,

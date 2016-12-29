@@ -30,7 +30,7 @@ def f():
     plt.figure(figsize=(20,3), linewidth=0.1)
 
 
-# In[8]:
+# In[4]:
 
 
 class TfSingleNet:
@@ -401,7 +401,7 @@ class TfSingleNet:
         self.sess.close()
 
 
-# In[9]:
+# In[5]:
 
 def plotRaster(r):
     a = 17
@@ -414,9 +414,9 @@ def plotRaster(r):
     ax.plot(x,y, '.', color='black', alpha=1)
 
 
-# In[17]:
+# In[29]:
 
-N, g, tauv, i, nu = 1000, 2,15,0,100
+N, g, tauv, i, nu = 1000, 7,15,0,100
 T = 1000
 
 gpu = TfSingleNet(N=N,
@@ -438,14 +438,14 @@ gpu.nuI = 100
 gpu.nuE = gpu.nuI 
 gpu.ratio = 1
 gpu.FACT = 500
-gpu.wII = 800
+gpu.wII = 600
 gpu.wIE = -3000
 gpu.wEE = 1000
 gpu.wEI = 3000
 gpu.runTFSimul()
 
 
-# In[18]:
+# In[30]:
 
 plotRaster(gpu.raster)
 # plt.xlim([900,1000])

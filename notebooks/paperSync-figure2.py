@@ -39,14 +39,14 @@ plt.style.use(['seaborn-paper'])
 sns.set_context("paper", font_scale=1.5, rc={"lines.linewidth": 2.5})
 
 
-# In[49]:
+# In[10]:
 
 gR=[]
-ratio = 1.5
-path = '../data/GetGammaSteadyState/GetSteadyState9900'
-for nu in np.arange(0,200,50):
-    for g in [4,10]:
-        filepath = path + '-tauv-15_g-%d_N-300_T-20000_nu-%d_ratio-%.2f'%(g, nu,ratio)
+ratio = 100
+path = '../data/GetGammaSteadyState/GetSteadyState100'
+for nu in np.arange(0,201,50):
+    for g in [10]:
+        filepath = path + '-tauv-15_g-%d_N-1000_T-200000_nu-%d_ratio-%.2f'%(g, nu,ratio)
         try:
             a = np.load(filepath)
             plt.plot(a['gamma'][:-2], c='black',alpha=(nu+20)/200)

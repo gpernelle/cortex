@@ -64,11 +64,11 @@ def makeConn(N, ratio=None, NE=0, NI=0, TF=True):
     connEI = connEI.T
 
     if TF:
-        conn = tf.Variable(conn, dtype='float32', name='all')
-        connEE = tf.Variable(connEE, dtype='float32', name='EE')
-        connII = tf.Variable(connII, dtype='float32', name='II')
-        connEI = tf.Variable(connEI, dtype='float32', name='EI')
-        connIE = tf.Variable(connIE, dtype='float32', name='IE')
+        conn = tf.Variable(conn, dtype=tf.float32, name='all')
+        connEE = tf.Variable(connEE, dtype=tf.float32, name='EE')
+        connII = tf.Variable(connII, dtype=tf.float32, name='II')
+        connEI = tf.Variable(connEI, dtype=tf.float32, name='EI')
+        connIE = tf.Variable(connIE, dtype=tf.float32, name='IE')
         tf.global_variables_initializer().run()
     return conn, connEE, connII, connEI, connIE
 
@@ -230,20 +230,20 @@ class TfSingleNet:
                 wGap_init = (tf.random_normal((N, N), mean=g0, stddev=g0/2, dtype=tf.float32,
                                               seed=None, name=None))
 
-                wII_init = self.wII / ((NI*(NI-1))**0.5) / self.dt
+                wII_init = tf.to_float(self.wII / ((NI*(NI-1))**0.5) / self.dt)
                 if NE>0:
-                    wEE_init = self.wEE / ((NE*(NE-1))**0.5) / self.dt
+                    wEE_init = tf.to_float(self.wEE / ((NE*(NE-1))**0.5) / self.dt)
                 else:
-                    wEE_init = 0
-                wIE_init = self.wIE / (NI*NE-1)**0.5 / self.dt
-                wEI_init = self.wEI / (NI*NE-1)**0.5 / self.dt
+                    wEE_init = tf.to_float(0.0)
+                wIE_init = tf.to_float(self.wIE / (NI*NE-1)**0.5 / self.dt)
+                wEI_init = tf.to_float(self.wEI / (NI*NE-1)**0.5 / self.dt)
 		
                 # print('wII, wEE', wII_init, wEE_init)
                 wGap = tf.Variable(tf.mul(wGap_init, connII))
-                WII = tf.Variable(tf.mul(wII_init, connII))
-                WEE = tf.Variable(tf.mul(wEE_init, connEE))
-                WEI = tf.Variable(tf.mul(wEI_init, connEI))
-                WIE = tf.Variable(tf.mul(wIE_init, connIE))
+                WII = tf.Variable(tf.mul(wII_init, connII), dtype=tf.float32)
+                WEE = tf.Variable(tf.mul(wEE_init, connEE), dtype=tf.float32)
+                WEI = tf.Variable(tf.mul(wEI_init, connEI), dtype=tf.float32)
+                WIE = tf.Variable(tf.mul(wIE_init, connIE), dtype=tf.float32)
                 
 
                 # plasticity learning rates
