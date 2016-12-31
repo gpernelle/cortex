@@ -180,8 +180,7 @@ class TfSingleNet:
             with tf.name_scope('membrane_var'):
                 # Create variables for simulation state
                 u = self.init_float([N, 1], 'u')
-#                 v = self.init_float([N, 1], 'v')
-                v = tf.Variable(tf.ones([N,1])*-70, name='v')
+                v = tf.Variable(tf.random_normal([N, 1], mean=-100, stddev=30, name='v'))
                 # currents
                 iBack = self.init_float([N, 1], 'iBack')
                 iChem = self.init_float([N, 1], 'iChem')
@@ -320,7 +319,7 @@ class TfSingleNet:
 
             # plasticity
             with tf.name_scope('plasticity'):
-                A = tf.matmul(p_, ones, name="bursts")  # bursts
+                A = tf.matmul(p_ * vectI, ones, name="bursts")  # bursts
                 B = tf.matmul(vv_ * vectI, ones, name="spikes")  # spikes
 
                 dwLTD_ = A_LTD * tf.add(A, tf.transpose(A, name="tr_bursts"))

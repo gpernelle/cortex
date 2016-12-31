@@ -1,7 +1,7 @@
 
 # coding: utf-8
 
-# In[2]:
+# In[30]:
 
 import fns
 from fns import *
@@ -39,20 +39,42 @@ plt.style.use(['seaborn-paper'])
 sns.set_context("paper", font_scale=1.5, rc={"lines.linewidth": 2.5})
 
 
-# In[10]:
+# In[36]:
+
+def f():
+    plt.figure(figsize=(20,3), linewidth=0.1)
+
+
+# In[ ]:
+
+# look at lfp, oscillation, voltage at the end of the simulation? does the behavior change
+
+
+# In[66]:
 
 gR=[]
-ratio = 100
-path = '../data/GetGammaSteadyState/GetSteadyState100'
-for nu in np.arange(0,201,50):
-    for g in [10]:
-        filepath = path + '-tauv-15_g-%d_N-1000_T-200000_nu-%d_ratio-%.2f'%(g, nu,ratio)
+ratio = 1
+f()
+path = '../data/GetGammaSteadyState/GetSteadyState130'
+for nu in np.arange(0,201,20):
+    for g in [5,10]:
+        filepath = path + '-tauv-15_g-%d_N-1000_T-100000_nu-%d_ratio-%.2f'%(g, nu,ratio)
         try:
             a = np.load(filepath)
             plt.plot(a['gamma'][:-2], c='black',alpha=(nu+20)/200)
             gR.append(a['gamma'])
         except:
             print('can\'t open %s'%filepath)
+plt.ylim([0.005,0.012])
+        
+
+
+# In[56]:
+
+f()
+filepath = path + '-tauv-15_g-%d_N-1000_T-100000_nu-%d_ratio-%.2f'%(5, 100,1.5)
+a = np.load(filepath)
+plt.plot(a['vvmI'][90000:100000])
 
 
 # In[6]:

@@ -1,7 +1,7 @@
 
 # coding: utf-8
 
-# In[2]:
+# In[4]:
 
 import fns
 from fns import *
@@ -24,13 +24,13 @@ output_notebook()
 from IPython.display import clear_output, Image, display
 
 
-# In[3]:
+# In[5]:
 
 def f():
     plt.figure(figsize=(20,3), linewidth=0.1)
 
 
-# In[4]:
+# In[60]:
 
 
 class TfSingleNet:
@@ -130,7 +130,7 @@ class TfSingleNet:
                 # Create variables for simulation state
                 u = self.init_float([N, 1], 'u')
 #                 v = self.init_float([N, 1], 'v')
-                v = tf.Variable(tf.random_normal([N,1], mean=-50, stddev=30, name='v'))
+                v = tf.Variable(tf.random_normal([N,1], mean=-100, stddev=30, name='v'))
                 # currents
                 iBack = self.init_float([N, 1], 'iBack')
                 iChem = self.init_float([N, 1], 'iChem')
@@ -401,7 +401,7 @@ class TfSingleNet:
         self.sess.close()
 
 
-# In[5]:
+# In[61]:
 
 def plotRaster(r):
     a = 17
@@ -414,9 +414,9 @@ def plotRaster(r):
     ax.plot(x,y, '.', color='black', alpha=1)
 
 
-# In[29]:
+# In[64]:
 
-N, g, tauv, i, nu = 1000, 7,15,0,100
+N, g, tauv, i, nu = 1000, 8,15,0,100
 T = 1000
 
 gpu = TfSingleNet(N=N,
@@ -438,14 +438,19 @@ gpu.nuI = 100
 gpu.nuE = gpu.nuI 
 gpu.ratio = 1
 gpu.FACT = 500
-gpu.wII = 600
-gpu.wIE = -3000
+gpu.wII = 1000
+gpu.wIE = -2000
 gpu.wEE = 1000
-gpu.wEI = 3000
+gpu.wEI = 1400
 gpu.runTFSimul()
 
 
-# In[30]:
+# In[65]:
+
+plotRaster(gpu.raster)
+# plt.xlim([900,1000])
+# plt.ylim([900,910])
+f()
 
 plotRaster(gpu.raster)
 # plt.xlim([900,1000])
