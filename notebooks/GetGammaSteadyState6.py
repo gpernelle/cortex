@@ -14,32 +14,20 @@ for g in [10]:
         for tauv in [15]:
             for nu in range(0, 201, 50):
                 for ratioNI in np.linspace(0.1,1,10):
-                    for gGap in [0,1]:
-                        i+=1
-                        params.append([T, FACT, N, g, tauv, i, nu, ratio, ratioNI, gGap, spm])
+                    for IAF in [True, False]:
+                        for gGap in [0,1]:
+                            for spm in [0,1]:
+                                i+=1
+                                params.append([T, FACT, N, g, tauv, i, nu, ratio, ratioNI, gGap, spm, IAF])
 
 # params.append([100000, FACT, N, 10, 15, 0, 150, 2, 1.0, 0, spm])
 
-# nodes = 4
-# i=0
-# params2 = []
-# N = 1000
-# FACT = 100
-# T = 20000
-# spm = True
-# for g in [10]:
-#     for ratio in [2]:
-#         for tauv in [15]:
-#             for nu in range(0, 201, 50):
-#                 for ratioNI in np.linspace(0.1,1,10):
-#                     for gGap in [0,1]:
-#                         i+=1
-#                         params2.append([T, FACT, N, g, tauv, i, nu, ratio, ratioNI, gGap, spm])
+
 
 ## colored noise
 def runFn(things):
-    T, FACT, N, g, tauv, i, nu, ratio, ratioNI, gGap, spm = things
-    # print(things)
+    T, FACT, N, g, tauv, i, nu, ratio, ratioNI, gGap, spm, IAF = things
+    print("%d / %d \n"%(i, len(params)))
     ### input: colored noise
     gpu = TfSingleNet(N=N,
                       T=T,
@@ -68,12 +56,13 @@ def runFn(things):
     gpu.wEI = 1000
     gpu.weightEvolution = True
     gpu.globalGap = gGap
+    gpu.IAF = IAF
 
     gpu.runTFSimul()
 
 
-    filename = "../data/GetGammaSteadyState/GetSteadyState211mean-tauv-%d_g-%d_N-%d_T-%d_nu-%d_ratio-%.2f_WEE-%d_WEI-%d_WIE-%d_WII-%d_FACT-%d_rNI-%.2f_global-%d"\
-               % (tauv, g, N, T, nu, ratio,  gpu.wEE, gpu.wEI, gpu.wIE, gpu.wII, FACT, ratioNI, gGap)
+    filename = "../data/GetGammaSteadyState/GetSteadyState220mean-tauv-%d_g-%d_N-%d_T-%d_nu-%d_ratio-%.2f_WEE-%d_WEI-%d_WIE-%d_WII-%d_FACT-%d_rNI-%.2f_global-%d_IAF-%d"\
+               % (tauv, g, N, T, nu, ratio,  gpu.wEE, gpu.wEI, gpu.wIE, gpu.wII, FACT, ratioNI, gGap, IAF*1)
     with open(filename, 'wb') as f:
         np.savez(f,
                  vvmE = gpu.vvmE,
@@ -88,8 +77,8 @@ def runFn(things):
                  gvar = gpu.gammaVar
                 )
     if spm:
-        filename = "../data/GetGammaSteadyState/raster_GetSteadyState211mean-tauv-%d_g-%d_N-%d_T-%d_nu-%d_ratio-%.2f_WEE-%d_WEI-%d_WIE-%d_WII-%d_FACT-%d_rNI-%.2f_global-%d" \
-                   % (tauv, g, N, T, nu, ratio, gpu.wEE, gpu.wEI, gpu.wIE, gpu.wII, FACT, ratioNI, gGap)
+        filename = "../data/GetGammaSteadyState/raster_GetSteadyState211mean-tauv-%d_g-%d_N-%d_T-%d_nu-%d_ratio-%.2f_WEE-%d_WEI-%d_WIE-%d_WII-%d_FACT-%d_rNI-%.2f_global-%d_IAF-%d" \
+                   % (tauv, g, N, T, nu, ratio, gpu.wEE, gpu.wEI, gpu.wIE, gpu.wII, FACT, ratioNI, gGap, IAF*1)
         with open(filename, 'wb') as f:
             np.save(f, gpu.raster.transpose())
     del gpu

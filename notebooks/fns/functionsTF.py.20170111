@@ -120,18 +120,21 @@ class TfSingleNet:
         self.nuI = nu
         self.nuE = nu
         self.ratio = 1
-        self.FACT = 10
+        self.ratioNI = ratioNI
+        self.FACT = 50
         self.weight_step = 100
-        self.wII = -100
-        self.wEE = 100
-        self.wEI = 1000
+        self.wII = 600
         self.wIE = -3000
-        self.inE = 100
-        self.k = 4
+        self.wEE = 1000
+        self.wEI = 1000
+        self.barname = '1'
+        self.barposition = 0
+        self.globalGap = 1
+        self.weightEvolution = False
+        self.IAF = False
         gpu_options = tf.GPUOptions(per_process_gpu_memory_fraction=memfraction)
 
         self.sess = tf.InteractiveSession(config=tf.ConfigProto(
-            allow_soft_placement=True,
             inter_op_parallelism_threads=NUM_CORES,
             intra_op_parallelism_threads=NUM_CORES,
             gpu_options=gpu_options,
@@ -186,7 +189,7 @@ class TfSingleNet:
                 # Create variables for simulation state
                 u = self.init_float([N, 1], 'u')
                 #                 v = self.init_float([N, 1], 'v')
-                v = tf.Variable(tf.random_normal([N, 1], mean=-100, stddev=30, name='v'))
+                v = tf.Variable(tf.ones([N, 1]) * -70, name='v')
                 # currents
                 iBack = self.init_float([N, 1], 'iBack')
                 iChem = self.init_float([N, 1], 'iChem')
@@ -198,25 +201,25 @@ class TfSingleNet:
                 vv = self.init_float([N, 1], 'spiking')
 
             with tf.name_scope('monitoring'):
-                vmE = self.init_float([T], "vm")
-                vmI = self.init_float([T], "vm")
-                umE = self.init_float([T], "um")
-                umI = self.init_float([T], "um")
-                vvmE = self.init_float([T], "vvm")
-                vvmI = self.init_float([T], "vvm")
-                pmE = self.init_float([T], "pm")
-                pmI = self.init_float([T], "pm")
+                vmE = self.init_float([T], "vmE")
+                vmI = self.init_float([T], "vmI")
+                umE = self.init_float([T], "umE")
+                umI = self.init_float([T], "umI")
+                vvmE = self.init_float([T], "vvmE")
+                vvmI = self.init_float([T], "vvmI")
+                pmE = self.init_float([T], "pmE")
+                pmI = self.init_float([T], "pmI")
                 lowspm = self.init_float([T], "lowspm")
                 imE = self.init_float([T], "imE")
                 imI = self.init_float([T], "imI")
                 icmE = self.init_float([T], "icmE")
                 icmI = self.init_float([T], "icmI")
-                gm = self.init_float([T // self.weight_step + 1], "gm")
-                WIIm = self.init_float([T // self.weight_step + 1], "WIIm")
-                Am = self.init_float([T // self.weight_step + 1], "Am")
-                Bm = self.init_float([T // self.weight_step + 1], "Bm")
+                gm = self.init_float([T // self.weight_step], "gm")
                 iEffm = self.init_float([T], "iEffm")
-                spikes = self.init_float([T, N], "spikes")
+                if self.spikeMonitor:
+                    spikes = self.init_float([T, N], "spikes")
+                else:
+                    spikes = self.init_float([T, 10], "spikes_dummy_var")
 
             with tf.name_scope('synaptic_connections'):
                 # synaptics connection
@@ -225,40 +228,31 @@ class TfSingleNet:
                 vectE, vectI = makeVect(N, NE=NE, NI=NI)
 
                 self.conn = conn.eval()
-                nbOfGaps = NI * (NI - 1)
+                nbOfGaps = NI*(NI-1)
 
                 if self.g0fromFile:
                     self.g = getGSteady(self.tauv, 5, 1000)
                 g0 = self.g / (nbOfGaps ** 0.5)
-                wGap_init = (tf.random_normal((N, N), mean=g0, stddev=1/(nbOfGaps ** 0.5),
-                                              dtype=tf.float32,
+                wGap_init = (tf.random_normal((N, N), mean=g0, stddev=g0 / 2, dtype=tf.float32,
                                               seed=None, name=None))
                 wGap_init = tf.clip_by_value(wGap_init, clip_value_min=0, clip_value_max=10 ** 10)
 
-                wII_init = self.wII / ((NI * (NI - 1)) ** 0.5) / self.dt
+                wII_init = tf.to_float(self.wII / ((NI * (NI - 1)) ** 0.5) / self.dt)
                 if NE > 0:
-                    wEE_init = self.wEE / ((NE * (NE - 1)) ** 0.5) / self.dt
+                    wEE_init = tf.to_float(self.wEE / ((NE * (NE - 1)) ** 0.5) / self.dt)
                 else:
-                    wEE_init = 0
-                wIE_init = self.wIE / (NI * NE - 1) ** 0.5 / self.dt
-                wEI_init = self.wEI / (NI * NE - 1) ** 0.5 / self.dt
+                    wEE_init = tf.to_float(0.0)
+                wIE_init = tf.to_float(self.wIE / (NI * NE - 1) ** 0.5 / self.dt)
+                wEI_init = tf.to_float(self.wEI / (NI * NE - 1) ** 0.5 / self.dt)
 
-                print('wII, wEE', wII_init, wEE_init)
-                globalGap = 1
                 wGap = tf.Variable(tf.mul(wGap_init, connII))
-
-                WII0 = tf.Variable(tf.mul(wII_init, connII))
-                if NE > 0:
-                    WEE = tf.Variable(tf.mul(wEE_init, connEE))
-                    WEI = tf.Variable(tf.mul(wEI_init, connEI))
-                    WIE = tf.Variable(tf.mul(wIE_init, connIE))
-                else:
-                    WEE = self.init_float([N, N], name='wee')
-                    WEI = self.init_float([N, N], name='wei')
-                    WIE = self.init_float([N, N], name='wie')
+                WII0 = tf.Variable(tf.mul(wII_init, connII), dtype=tf.float32)
+                WEE = tf.Variable(tf.mul(wEE_init, connEE), dtype=tf.float32)
+                WEI = tf.Variable(tf.mul(wEI_init, connEI), dtype=tf.float32)
+                WIE = tf.Variable(tf.mul(wIE_init, connIE), dtype=tf.float32)
 
                 # plasticity learning rates
-                A_LTD_ = 2.45e-5 * self.FACT * 400 / NI
+                A_LTD_ = 2.45e-5 * self.FACT * 400 / N
                 A_LTD = tf.constant(A_LTD_, name="A_LTP", dtype=tf.float32)
                 A_LTP = tf.constant(self.ratio * A_LTD_, name="A_LTD", dtype=tf.float32)
 
@@ -281,9 +275,8 @@ class TfSingleNet:
             one = tf.Variable(1.0)
             ones = tf.ones((1, N))
             t_rest = self.init_float([N, 1], 't_rest')
-            t_rest_ = tf.zeros((N, 1))
-            inE = tf.Variable(self.inE, dtype=tf.float32)
-            kMult = tf.Variable(self.k, dtype=tf.float32)
+            t_rest_ = tf.zeros((N,1))
+
 
         #################################################################################
         ## Computation
@@ -292,19 +285,19 @@ class TfSingleNet:
             with tf.name_scope('Currents'):
                 # Discretized PDE update rules
                 ps([WII0, vv, vectI])
-                WII = WII0 - wGap * dt * (NI) * WII0 * kMult
-                WII = tf.clip_by_value(WII, clip_value_min=wII_init / 10, clip_value_max=-wII_init / 10)
+                WII = WII0 - wGap * dt * NI * WII0
+
                 iChem_ = iChem + \
                          dt / 10 * (-iChem + tf.matmul(WII + WEI, tf.to_float(vv))) + \
                          dt / 10 * (-iChem + tf.matmul(WEE + WIE, tf.to_float(vv)))
                 # current
-                iBack_ = iBack + dt / 10 * (-iBack + tf.random_normal((N, 1), mean=0.0, stddev=1.0, dtype=tf.float32,
-                                                                      seed=None, name=None))
-                input_ = input[tf.to_int32(sim_index)] * vectI
+                iBack_ = iBack + dt / 5 * (-iBack + tf.random_normal((N, 1), mean=0.0, stddev=1.0, dtype=tf.float32,
+                                                                     seed=None, name=None))
+                input_ = input[tf.to_int32(sim_index)]*vectI
 
                 # input to network: colored noise + external input
-                iEff_ = iBack_ * scaling + input_ + TImean * vectI + (TImean + inE) * vectE
-
+                # iEff_ = iBack_ * scaling + input_ + TImean
+                iEff_ = iBack_ * scaling + input_ + TImean * vectI + (TImean + 50) * vectE
                 iGap_ = (tf.matmul(wGap, v) - tf.mul(tf.reshape(tf.reduce_sum(wGap, 0), (N, 1)), v)) * vectI
 
                 I_ = iGap_ + iChem_ + iEff_
@@ -318,7 +311,7 @@ class TfSingleNet:
 
                 if self.IAF:
                     v_ = tf.mul(v + dt / tauv * (tf.mul((v + 60), (v + 50)) - 20 * u + 8 * I_), vectI) + \
-                         tf.mul(tf.mul(v + dt / 5 * (-v + 0.17 * I_), vectE),
+                         tf.mul(tf.mul(v + dt / 10 * ( -v + 0.01 * I_), vectE),
                                 tf.to_float(tf.greater(sim_index, t_rest, name='trest')))
 
                 # adaptation
@@ -330,20 +323,19 @@ class TfSingleNet:
 
                 if self.IAF:
                     vv_ = tf.mul(tf.to_float(tf.greater(v_, 25.0)), vectI) + \
-                          tf.mul(tf.to_float(tf.greater(v_, 25.0)), vectE)
+                          tf.mul(tf.to_float(tf.greater(v_, 1.4)), vectE)
 
                 # reset
                 v_ = tf.mul(vv_, -30.0) * vectI + tf.mul(vv_, -50.0) * vectE + tf.mul((1 - vv_), v_)
                 if self.IAF:
-                    v_ = tf.mul(vv_, -35.0) * vectI + tf.mul(vv_, -30.0) * vectE + tf.mul((1 - vv_), v_)
-                    t_rest_ = (sim_index + tf.mul(vv_, 3)) * vv_
-
+                    v_ = tf.mul(vv_, -30.0) * vectI + (tf.to_float(tf.greater(v_,1))*tf.mul(vv_, 0.5)) * vectE + tf.mul((1 - vv_), v_)
+                    t_rest_ = (sim_index + tf.mul(vv_, 4)) * vv_
                 u_ = u_ + 50 * vv_ * vectI + 100 * vectE * vv_
 
             # bursting
             with tf.name_scope('bursting'):
                 LowSp_ = (LowSp + dt / 8.0 * (vv_ * 8.0 / dt - LowSp))
-                p_ = tf.to_float(tf.greater(LowSp_, 1.3))
+                p_ = tf.to_float(tf.greater(LowSp_, 1.5))
 
             # plasticity
             with tf.name_scope('plasticity'):
@@ -354,7 +346,7 @@ class TfSingleNet:
                 dwLTP_ = A_LTP * tf.add(B, tf.transpose(B, name="tr_spikes"))
 
                 dwGap_ = dt * tf.sub(dwLTP_, dwLTD_)
-                if globalGap:
+                if self.globalGap:
                     dwGap_ = tf.reduce_mean(dwGap_)
                 wGap_ = tf.clip_by_value(wGap + dwGap_, clip_value_min=0, clip_value_max=10 ** 10)
 
@@ -368,7 +360,7 @@ class TfSingleNet:
                 umeanI_ = tf.reduce_mean(u_ * vectI)
                 pmeanE_ = tf.reduce_mean(p_ * vectE)
                 pmeanI_ = tf.reduce_mean(p_ * vectI)
-                lowspmean_ = tf.reduce_mean(LowSp_)
+                lowspmean_ = tf.reduce_mean(LowSp_ * vectI)
                 imeanE_ = tf.reduce_mean(I_ * vectE)
                 imeanI_ = tf.reduce_mean(I_ * vectI)
                 icmeanE_ = tf.reduce_mean(iChem_ * vectE)
@@ -379,35 +371,31 @@ class TfSingleNet:
                     tf.scatter_update(vvmI, tf.to_int32(sim_index), vvmeanI_),
                     tf.scatter_update(vmE, tf.to_int32(sim_index), vmeanE_),
                     tf.scatter_update(vmI, tf.to_int32(sim_index), vmeanI_),
-                    tf.scatter_update(umE, tf.to_int32(sim_index), umeanE_),
-                    tf.scatter_update(umI, tf.to_int32(sim_index), umeanI_),
-                    tf.scatter_update(pmE, tf.to_int32(sim_index), pmeanE_),
+                    # tf.scatter_update(umE, tf.to_int32(sim_index), umeanE_),
+                    # tf.scatter_update(umI, tf.to_int32(sim_index), umeanI_),
+                    # tf.scatter_update(pmE, tf.to_int32(sim_index), pmeanE_),
                     tf.scatter_update(pmI, tf.to_int32(sim_index), pmeanI_),
-                    tf.scatter_update(lowspm, tf.to_int32(sim_index), lowspmean_),
+                    # tf.scatter_update(lowspm, tf.to_int32(sim_index), lowspmean_),
                     tf.scatter_update(imE, tf.to_int32(sim_index), imeanE_),
                     tf.scatter_update(imI, tf.to_int32(sim_index), imeanI_),
-                    tf.scatter_update(icmE, tf.to_int32(sim_index), icmeanE_),
-                    tf.scatter_update(icmI, tf.to_int32(sim_index), icmeanI_),
-                    tf.scatter_update(iEffm, tf.to_int32(sim_index), iEffm_),
+                    # tf.scatter_update(icmE, tf.to_int32(sim_index), icmeanE_),
+                    # tf.scatter_update(icmI, tf.to_int32(sim_index), icmeanI_),
+                    # tf.scatter_update(iEffm, tf.to_int32(sim_index), iEffm_),
                     sim_index.assign_add(one),
                 )
 
             with tf.name_scope('Weights_monitoring'):
                 gm_ = tf.reduce_sum(wGap * connII)
-                WIIm_ = tf.reduce_sum(WII * connII)
-                Am_ = tf.reduce_mean(A)
-                Bm_ = tf.reduce_mean(B)
                 update_weights = tf.group(
                     tf.scatter_update(gm, tf.to_int32(sim_index / weight_step), gm_),
-                    tf.scatter_update(WIIm, tf.to_int32(sim_index / weight_step), WIIm_),
-                    tf.scatter_update(Am, tf.to_int32(sim_index / weight_step), Am_),
-                    tf.scatter_update(Bm, tf.to_int32(sim_index / weight_step), Bm_),
                 )
 
-            with tf.name_scope('Raster_Plot'):
-                spike_update = tf.group(
-                    tf.scatter_update(spikes, tf.to_int32(sim_index), tf.reshape((vv_), (N,))),
-                )
+            # performed if self.spikeMonitor is True
+            if self.spikeMonitor:
+                with tf.name_scope('Raster_Plot'):
+                    spike_update = tf.group(
+                        tf.scatter_update(spikes, tf.to_int32(sim_index), tf.reshape((vv_), (N,))),
+                    )
 
             # Operation to update the state
             step = tf.group(
@@ -432,7 +420,12 @@ class TfSingleNet:
             self.WEE = WEE.eval()
             self.WIE = WIE.eval()
             self.WEI = WEI.eval()
-            self.wGap0 = wGap.eval()
+
+            t0 = time.time()
+            self.gamma = []
+            self.gammaMin = []
+            self.gammaMax = []
+            self.gammaVar = []
             # Step simulation
             ops = {'plast': [step, plast, update],
                    'static': [step, update]
@@ -440,53 +433,57 @@ class TfSingleNet:
             if self.spikeMonitor:
                 for k, v in ops.items():
                     ops[k] = v + [spike_update]
+            for i in trange(T, desc=self.barname, position=self.barposition):
 
-            t0 = time.time()
-            for i in trange(T):
                 if i > startPlast:
                     self.sess.run(ops['plast'])
                 else:
                     self.sess.run(ops['static'])
 
                 if i % weight_step == 0:
+                    if self.weightEvolution:
+                        wg = wGap.eval()
+                        self.gammaMin.append(np.min(wg))
+                        self.gammaMax.append(np.max(wg))
+                        self.gammaVar.append(np.var(wg))
                     self.sess.run([update_weights])
 
-                    #                 # Visualize every X steps
-                    #                 if i % 1 == 0:
-                    #                     if self.disp:
-                    #                         clear_output(wait=True)
-                    #                         self.DisplayArray(wGap.eval(), rng=[0, 1.5 * g0], text="%.2f ms" % (i * self.dt))
+                # Visualize every X steps
+                if i % 1 == 0:
+                    if self.disp:
+                        clear_output(wait=True)
+                        self.DisplayArray(wGap.eval(), rng=[0, 1.5 * g0], text="%.2f ms" % (i * self.dt))
 
-                    #                 if i==0:
-                    #                     self.w0 = wGap.eval()
-                    #                 elif i==T-1:
-                    #                     self.wE = wGap.eval()
+                if i == 0:
+                    self.w0 = wGap.eval()
+                elif i == T - 1:
+                    self.wE = wGap.eval()
 
-            # monitoring variables
-            self.wGapEnd = wGap.eval()
+                #------------------------------------------------------
+                # end of for loop
+                #------------------------------------------------------
+
             self.vvmE = vvmE.eval()
             self.vvmI = vvmI.eval()
             self.vmE = vmE.eval()
             self.vmI = vmI.eval()
-            self.umE = umE.eval()
-            self.umI = umI.eval()
-            self.pE = pmE.eval()
+            # self.umE = umE.eval()
+            # self.umI = umI.eval()
+            # self.pE = pmE.eval()
             self.pI = pmI.eval()
             self.lowsp = lowspm.eval()
             self.imE = imE.eval()
             self.imI = imI.eval()
-            self.icmE = icmE.eval()
-            self.icmI = icmI.eval()
-            self.iEff = iEffm.eval()
-            self.gamma = gm.eval() / np.sum(nbOfGaps)
-            self.WIIm = WIIm.eval() / np.sum(nbOfGaps)
-            self.Am = Am.eval()
-            self.Bm = Bm.eval()
+            # self.icmE = icmE.eval()
+            # self.icmI = icmI.eval()
+            # self.iEff = iEffm.eval()
+            gammaSum = gm.eval()
+            self.gamma = gammaSum / nbOfGaps
+
             if self.spikeMonitor:
                 self.raster = spikes.eval()
             self.burstingActivity = np.mean(self.pI)
             self.spikingActivity = np.mean(self.vvmI)
-
         print('%.2f' % (time.time() - t0))
         self.sess.close()
 

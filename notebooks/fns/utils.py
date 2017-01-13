@@ -30,7 +30,7 @@ import matplotlib as mpl
 from numba import autojit
 import pyprind
 import gc
-from tqdm import trange
+from tqdm import tnrange, trange
 
 # cx4 = cubehelix.cmap(reverse=False, start=0., rot=0.5)
 

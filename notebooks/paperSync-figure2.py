@@ -1,7 +1,7 @@
 
 # coding: utf-8
 
-# In[30]:
+# In[2]:
 
 import fns
 from fns import *
@@ -39,116 +39,146 @@ plt.style.use(['seaborn-paper'])
 sns.set_context("paper", font_scale=1.5, rc={"lines.linewidth": 2.5})
 
 
-# In[36]:
+# In[35]:
 
-def f():
-    plt.figure(figsize=(20,3), linewidth=0.1)
+def f(w=20,h=3):
+    plt.figure(figsize=(w,h), linewidth=0.1)
 
 
-# In[ ]:
+# In[7]:
 
 # look at lfp, oscillation, voltage at the end of the simulation? does the behavior change
 
 
-# In[66]:
+# In[8]:
 
-gR=[]
-ratio = 1
-f()
-path = '../data/GetGammaSteadyState/GetSteadyState130'
-for nu in np.arange(0,201,20):
-    for g in [5,10]:
-        filepath = path + '-tauv-15_g-%d_N-1000_T-100000_nu-%d_ratio-%.2f'%(g, nu,ratio)
-        try:
-            a = np.load(filepath)
-            plt.plot(a['gamma'][:-2], c='black',alpha=(nu+20)/200)
-            gR.append(a['gamma'])
-        except:
-            print('can\'t open %s'%filepath)
-plt.ylim([0.005,0.012])
-        
-
-
-# In[56]:
-
-f()
-filepath = path + '-tauv-15_g-%d_N-1000_T-100000_nu-%d_ratio-%.2f'%(5, 100,1.5)
-a = np.load(filepath)
-plt.plot(a['vvmI'][90000:100000])
-
-
-# In[6]:
-
-gR=[]
-for k in np.arange(0,200,10):
-    a = np.load('GetSteadyState4-tauv-15_g-7_N-1000_T-40000_k-%d'%k)
-    plt.plot(a['gamma'])
-    gR.append(a['gamma'])
-
-
-# In[7]:
-
-a = np.load('GetSteadyState4-tauv-15_g-7_N-1000_T-40000_k-0')
+# ratio low, 2nd dyn
+# global : 0.4-0.5
+# local : 0.9
 
 
 # In[9]:
 
-plt.plot(a['gamma'])
-plt.plot(a['vvm'])
+gR=[]
+ratio = 2
+rNI=0.2
+gGap=0
+fast = 0
+if fast:
+    N=1000
+    T=10000
+else:
+    N=1000
+    T=800000
+    FACT = 100
+
+path = '../data/GetGammaSteadyState/GetSteadyState220'
+c=['red', 'blue', 'black']
+# f(8,3)
+# ax = plt.subplot(111)
+# for nu in np.arange(0,200,30):
+#     for k,g in enumerate([10]):
+#         WEE = 1000
+#         WEI = 1000
+#         WIE = -3000
+#         WII = -1000
+#         filepath = path + '-tauv-15_g-%d_N-%d_T-%d_nu-%d_ratio-%.2f_WEE-%d_WEI-%d_WIE-%d_WII-%d'%(g,N,T, nu,ratio, WEE, WEI, WIE, WII)
+#         try:
+#             a = np.load(filepath)
+#             ax.plot(a['gamma'][:-2]*N*0.2, c=c[k],alpha=(nu+20)/200)
+#             gR.append(a['gamma'])
+#         except:
+#             print('can\'t open %s'%filepath)
+#     ax.set_title('g mean')
+            
 
 
-# In[3]:
+# In[108]:
+
+def genPath(path, g,N,T, nu,ratio, WEE, WEI, WIE, WII, FACT, rNI, k, IAF, inE):
+    fpath = path + '-tauv-15_g-%d_N-%d_T-%d_nu-%d_ratio-%.2f_WEE-%d_WEI-%d_WIE-%d_WII-%d_FACT-%d_rNI-%.2f_k-%d_IAF-%d_inE-%d'%(g,N,T, 
+                                                                                                                            nu,ratio, 
+                                                                                                                            WEE, WEI, WIE, WII, 
+                                                                                                                            FACT, rNI, k, IAF, inE)
+#     if os.path.isfile(fpath):
+#         print("exist")
+    return fpath
 
 
+g = 5
+gR=[]
+ratio = 8
+rNI=0.2
+gGap=0
+fast = 0
+IAF = 1
+if fast:
+    N=1000
+    T=10000
+else:
+    N=1000
+    T=10000
+FACT = 20
+WEE = 1000
+WEI = 1000
+WII = -1000
+WIE = -3000
+kmult = 4
+inE = 100
+
+path = '../data/GetGammaSteadyState/GetSteadyState250mean'
+c=['red', 'blue', 'black']
+f(8,6)
+ax = plt.subplot(311)
+for nu in np.arange(0,100,20):
+    for k,g in enumerate([5]):
+        filepath = genPath(path, g,N,T, nu,ratio, WEE, WEI, WIE, WII, FACT, rNI, kmult, IAF, inE)
+        try:
+            a = np.load(filepath)
+            ax.plot(a['gamma'][:-2], c=c[k],alpha=(nu+20)/200, label=nu)
+            ax.legend()
+            gR.append(a['gamma'])
+        except:
+            print('can\'t open %s'%filepath)
+    ax.plot(a['gamma'][:-2]*0, c='g')
+    ax.set_ylim([-0.001,None])
+    ax.set_title('GJ mean')
+            
+            
+# f(8,3)
+ax = plt.subplot(312)
+ax2 = plt.subplot(313)
+nb = 30
+l = 5000
+for nu in np.arange(0,100,20):
+    for k,g in enumerate([5]):
+        filepath = genPath(path, g,N,T, nu,ratio, WEE, WEI, WIE, WII, FACT, rNI, kmult, IAF, inE)
+        try:
+            a = np.load(filepath)['vvmE']
+            
+            L = len(a)
+            step = L/nb
+            p=[]
+            freq=[]
+            for i in range(nb-1):
+                s = i*step
+                e = i*step + l
+                if e<L:
+                    p.append(fourier(a[s:e])[1])
+                    freq.append(fourier(a[s:e])[0])
+            ax.plot(p, c=c[k],alpha=(nu+20)/200)
+            ax2.plot(freq, c=c[k],alpha=(nu+20)/200)
+            ax2.set_ylim([0,200])
+        except:
+            print('can\'t open %s'%filepath)
+    ax.set_title('power vmE')
+
+plt.suptitle('global %d | ratioNI %.2f | FACT %d | IAF %d'%(gGap,rNI,FACT, IAF ),y=1.05)
+plt.tight_layout()
+plt.savefig(DIRECTORY + 'weight_evol-tauv-15_g-%d_N-%d_T-%d_ratio-%.2f_WEE-%d_WEI-%d_WIE-%d_WII-%d_FACT-%d_rNI-%.2f_k-%d_IAF-%d_inE-%d.pdf'%(g,N,T,ratio, WEE, WEI, WIE, WII, FACT, rNI, kmult, IAF, inE), bbox_inches='tight')
 
 
-# In[6]:
-
-N, g, tauv, i, nu = 2000, 14,15,0,200
-T = 100
-
-gpu = TfSingleNet(N=N,
-                  T=T,
-                  disp=False,
-                  tauv=45,
-                  device='/gpu:0',
-                  spikeMonitor=False,
-                  g0=g,
-                  startPlast = 50,
-                  nu = nu,
-                  NUM_CORES = 1)
-# gpu.input = apple
-print(gpu.lowspthresh)
-gpu.lowspthresh = 1.5
-gpu.ratio = 200
-gpu.FACT = 200
-gpu.runTFSimul()
-
-    
-
-
-# In[8]:
-
-tf.__git_version__
-
-
-# In[7]:
-
-plt.plot(gpu.vvm)
-plt.figure()
-plt.plot(gpu.gamma)
-
-t0 = 8000
-t1 = 9000
-plt.figure(figsize=(7,3))
-plt.plot(gpu.vvm[t0:t1])
-plt.figure()
-plt.plot(gpu.gamma[t0:t1])
-plt.figure()
-plt.plot(np.mean(np.array(gpu.lowsp).reshape(T,N).transpose(), axis=0))
-
-
-# In[22]:
+# In[123]:
 
 df = pd.DataFrame(columns=('nu', 'g', 'T', 'N', 'f', 'p', 'burst', 'spike', 'ratio'
                           ) )
@@ -159,26 +189,39 @@ start = 5900
 s0 = 100
 sigma = 8
 params=[]
+inE = 100
+
 for T in [8000]:
         for N in [1000]:
-            for g in np.arange(0, 10, 0.5):
-                for nu in np.arange(0, 200, 5):
+            for g in np.arange(0, 8,0.5):
+                for nu in np.arange(0, 101, 5):
                         i+=1
-                        params.append([T, N, g, nu, i])
+                        params.append([T, N, g, nu, i, inE])
 
 def getDF(params):
-    T, N, g, nu, i = params
-    filename = "../data/PhasePlan7/PhasePlan71_nu-%d_g-%.2f_N-%d_input-%s_T-%d" % (nu, g, N, 'noise', T)
-    a = np.load(filename)
-    I = a['i']
+    wII = -1000
+    wIE = -3000
+    wEE = 1000
+    wEI = 1000
+    k=4
+    T, N, g, nu, i, inE = params
+    filename = "../data/PhasePlan7/PhasePlan290_nu-%d_g-%.2f_N-%d_k-%d_T-%d_WEE-%d_WEI-%d_WIE-%d_WII-%d_inE-%d" % (nu, g, N, k, T,
+                                                                                                                       wEE, wEI, wIE, wII, inE)
+    try:
+        a = np.load(filename)
+        I = a['vmE']
 
-    # compute frequency and power with fourier transform of the lfp (mean current)
-    f = fourier(I[10:])[0]
-    p = fourier(I[10:])[1]
+        # compute frequency and power with fourier transform of the lfp (mean current)
+        f = fourier(I[10:])[0]
+        p = fourier(I[10:])[1]
 
-    return [i, int(nu), g, int(T), int(N), f, p, 
-                 float(a['burst']), float(a['spike']), (a['burst']/a['spike'])]
-    
+        return [i, int(nu), g, int(T), int(N), f, p, 
+                     float(a['burst']), float(a['spike']), (a['burst']/a['spike'])]
+    except:
+        print(filename)
+        return [i, int(nu), g, int(T), int(N), 0,0, 
+                    0,0,0]
+
 q = Pool(nodes=56)
 re = q.amap(getDF, params)
 res = re.get()
@@ -186,12 +229,12 @@ for r in res:
     df.loc[r[0]]=r[1:]
 
 
-# In[27]:
+# In[124]:
 
-print(gR)
+df.head()
 
 
-# In[32]:
+# In[126]:
 
 cols = ['f', 'p']
 sns.set_context("paper", font_scale=1.5, rc={"lines.linewidth": 2.5})
@@ -207,15 +250,61 @@ def setLabels(fig):
 
 fig = plotHeatmap(df, col='ratio', y='nu', x='g', title='Mean Activity Ratio (bursts/spikes)', cmap='viridis')
 setLabels(fig)
-gR=[]
-N=100
-ratio=1
-path = '../data/GetGammaSteadyState/GetSteadyState100'
-for k in np.arange(0,200,10):
-    a = np.load(path + '-tauv-15_g-10_N-%d_T-40000_nu-%d_ratio-%.2f'%(N,k,ratio))
-    gR.append(a['gamma'])
-    plt.plot(np.mean(a['gamma'][-100:-1])*N*2,(200-k)/5, 'o', color='w')
-plt.savefig(PAPER + 'ratio-steadystate.svg')
+
+g = 5
+ratio = 3
+rNI=0.2
+gGap=0
+fast = 0
+IAF = 1
+N=1000
+T=10000
+FACT = 20
+WEE = 1000
+WEI = 1000
+WII = -1000
+WIE = -3000
+kmult = 4
+inE = 100
+
+path = '../data/GetGammaSteadyState/GetSteadyState250mean'
+
+for nu in np.arange(0,100,10):
+    for k,g in enumerate([5]):
+        filepath = genPath(path, g,N,T, nu,ratio, WEE, WEI, WIE, WII, FACT, rNI, kmult, IAF, inE)
+        try:
+            a = np.load(filepath)
+            plt.plot(np.mean(a['gamma'][-20:-2])*200*2,(100-nu)/5, 'o', c='w')
+        except:
+            print('can\'t open %s'%filepath)
+    
+
+fig = plotHeatmap(df, col='p', y='nu', x='g', rasterized=True,
+                  title='Power of strongest Fourier component', cmap='RdBu_r')
+setLabels(fig)
+# plt.xlim([2*2,7*2])
+plt.tight_layout()
+
+for nu in np.arange(0,100,10):
+    for k,g in enumerate([5]):
+        filepath = genPath(path, g,N,T, nu,ratio, WEE, WEI, WIE, WII, FACT, rNI, kmult, IAF, inE)
+        try:
+            a = np.load(filepath)
+            plt.plot(np.mean(a['gamma'][-20:-2])*200*2,(100-nu)/5, 'o', c='b')
+        except:
+            print('can\'t open %s'%filepath)
+
+
+# gR=[]
+# N=300
+# ratio=30
+# path = '../data/GetGammaSteadyState/GetSteadyState200'
+# for k in np.arange(0,200,20):
+#     a = np.load(path + '-tauv-15_g-5_N-%d_T-10000_nu-%d_ratio-%.2f'%(N,k,ratio))
+#     gR.append(a['gamma'])
+#     plt.plot(np.mean(gR[-100:-1])*N*0.2,(200-k)/5, 'o', color='w')
+# plt.savefig(PAPER + 'ratio-steadystate.svg')
+
 
 
 # ## Bursting protocol
