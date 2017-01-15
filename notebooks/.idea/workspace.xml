@@ -30,8 +30,20 @@
       <file leaf-file-name="GetGammaSteadyState-findRatio.py" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/GetGammaSteadyState-findRatio.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="378">
-              <caret line="14" column="40" lean-forward="false" selection-start-line="14" selection-start-column="40" selection-end-line="14" selection-end-column="40" />
+            <state relative-caret-position="216">
+              <caret line="8" column="8" lean-forward="true" selection-start-line="8" selection-start-column="8" selection-end-line="8" selection-end-column="8" />
+              <folding>
+                <element signature="e#0#10#0" expanded="true" />
+              </folding>
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file leaf-file-name="Stimulation.py" pinned="false" current-in-tab="true">
+        <entry file="file://$PROJECT_DIR$/Stimulation.py">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="1458">
+              <caret line="72" column="37" lean-forward="true" selection-start-line="72" selection-start-column="37" selection-end-line="72" selection-end-column="37" />
               <folding>
                 <element signature="e#0#10#0" expanded="true" />
               </folding>
@@ -42,20 +54,8 @@
       <file leaf-file-name="paperSync-figure1-and-2-phaseplans.py" pinned="true" current-in-tab="false">
         <entry file="remoteDeploymentFS://&lt;ddd82c7a-e0ad-4fb4-9cf9-a20382a20892&gt;/paperSync-figure1-and-2-phaseplans.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="533">
-              <caret line="23" column="21" lean-forward="true" selection-start-line="0" selection-start-column="0" selection-end-line="67" selection-end-column="25" />
-              <folding>
-                <element signature="e#0#10#0" expanded="true" />
-              </folding>
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file leaf-file-name="paperSync-figure1-and-2-phaseplans.py" pinned="false" current-in-tab="true">
-        <entry file="file://$PROJECT_DIR$/paperSync-figure1-and-2-phaseplans.py">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="1809">
-              <caret line="67" column="25" lean-forward="false" selection-start-line="67" selection-start-column="25" selection-end-line="67" selection-end-column="25" />
+            <state relative-caret-position="1370">
+              <caret line="54" column="36" lean-forward="true" selection-start-line="54" selection-start-column="4" selection-end-line="54" selection-end-column="36" />
               <folding>
                 <element signature="e#0#10#0" expanded="true" />
               </folding>
@@ -152,6 +152,7 @@
         <option value="$PROJECT_DIR$/fns/functionsTF.py" />
         <option value="$PROJECT_DIR$/GetGammaSteadyState-findRatio.py" />
         <option value="$PROJECT_DIR$/paperSync-figure1-and-2-phaseplans.py" />
+        <option value="$PROJECT_DIR$/Stimulation.py" />
       </list>
     </option>
   </component>
@@ -541,13 +542,6 @@
     <watches-manager />
   </component>
   <component name="editorHistoryManager">
-    <entry file="file://$PROJECT_DIR$/GetGammaSteadyState5-titan.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="0">
-          <caret line="0" column="0" lean-forward="false" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/fns/functions.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="6561">
@@ -941,16 +935,6 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/GetGammaSteadyState-findRatio.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="378">
-          <caret line="14" column="40" lean-forward="false" selection-start-line="14" selection-start-column="40" selection-end-line="14" selection-end-column="40" />
-          <folding>
-            <element signature="e#0#10#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/fns/functionsTF.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="1539">
@@ -965,6 +949,26 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="1809">
           <caret line="67" column="25" lean-forward="false" selection-start-line="67" selection-start-column="25" selection-end-line="67" selection-end-column="25" />
+          <folding>
+            <element signature="e#0#10#0" expanded="false" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/GetGammaSteadyState-findRatio.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="216">
+          <caret line="8" column="8" lean-forward="true" selection-start-line="8" selection-start-column="8" selection-end-line="8" selection-end-column="8" />
+          <folding>
+            <element signature="e#0#10#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/Stimulation.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="1458">
+          <caret line="72" column="37" lean-forward="true" selection-start-line="72" selection-start-column="37" selection-end-line="72" selection-end-column="37" />
           <folding>
             <element signature="e#0#10#0" expanded="true" />
           </folding>

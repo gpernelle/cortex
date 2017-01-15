@@ -1,7 +1,7 @@
 
 # coding: utf-8
 
-# In[1]:
+# In[10]:
 
 import fns
 from fns import *
@@ -24,13 +24,13 @@ output_notebook()
 from IPython.display import clear_output, Image, display
 
 
-# In[2]:
+# In[11]:
 
 def f():
     plt.figure(figsize=(20,3), linewidth=0.1)
 
 
-# In[3]:
+# In[12]:
 
 class TfSingleNet:
     def __init__(self, N=400,
@@ -426,7 +426,7 @@ class TfSingleNet:
         self.sess.close()
 
 
-# In[4]:
+# In[13]:
 
 def plotRaster(r):
     a = 17
@@ -456,10 +456,10 @@ plt.plot(x, WII - x*0.1*WII*k)
 plt.plot(x, x*0)
 
 
-# In[656]:
+# In[17]:
 
-N, g, tauv, i, nu = 1000, 0.7,15,0, 100
-T = 4000
+N, g, tauv, i, nu = 1000, 5,15,0, 10
+T = 10000
 inE = 100
 step=0
 ratioNI=0.2
@@ -477,25 +477,25 @@ gpu = TfSingleNet(N=N,
                   ratioNI=ratioNI)
 # gpu.input = apple
 gpu.weight_step = 10
-gpu.k = 5
+gpu.k = 4
 gpu.inE = inE
 gpu.input = np.concatenate([np.zeros(T//2),np.ones(T//2)*step])
 # gpu.input = np.zeros(T)
 gpu.dt = 0.1
-gpu.nuI = 100
+gpu.nuI = nu
 gpu.nuE = gpu.nuI 
-gpu.ratio = 12
-gpu.FACT = 30
-gpu.wII = -3000
+gpu.ratio = 3
+gpu.FACT = 5
+gpu.wII = -1000
 gpu.wIE = -3000
-gpu.wEE = 700
-gpu.wEI = 700
+gpu.wEE = 1000
+gpu.wEI = 1000
 
 gpu.IAF = True
 gpu.runTFSimul()
 
 
-# In[657]:
+# In[18]:
 
 plotRaster(gpu.raster)
 # plt.xlim([T-1000,T])

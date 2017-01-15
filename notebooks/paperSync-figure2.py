@@ -93,7 +93,7 @@ c=['red', 'blue', 'black']
             
 
 
-# In[108]:
+# In[128]:
 
 def genPath(path, g,N,T, nu,ratio, WEE, WEI, WIE, WII, FACT, rNI, k, IAF, inE):
     fpath = path + '-tauv-15_g-%d_N-%d_T-%d_nu-%d_ratio-%.2f_WEE-%d_WEI-%d_WIE-%d_WII-%d_FACT-%d_rNI-%.2f_k-%d_IAF-%d_inE-%d'%(g,N,T, 
@@ -106,8 +106,7 @@ def genPath(path, g,N,T, nu,ratio, WEE, WEI, WIE, WII, FACT, rNI, k, IAF, inE):
 
 
 g = 5
-gR=[]
-ratio = 8
+ratio = 3
 rNI=0.2
 gGap=0
 fast = 0
@@ -135,9 +134,8 @@ for nu in np.arange(0,100,20):
         filepath = genPath(path, g,N,T, nu,ratio, WEE, WEI, WIE, WII, FACT, rNI, kmult, IAF, inE)
         try:
             a = np.load(filepath)
-            ax.plot(a['gamma'][:-2], c=c[k],alpha=(nu+20)/200, label=nu)
+            ax.plot(a['gamma'][:-2]*200, c=c[k],alpha=(nu+20)/200, label=nu)
             ax.legend()
-            gR.append(a['gamma'])
         except:
             print('can\'t open %s'%filepath)
     ax.plot(a['gamma'][:-2]*0, c='g')

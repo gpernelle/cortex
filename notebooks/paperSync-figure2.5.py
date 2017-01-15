@@ -1,7 +1,7 @@
 
 # coding: utf-8
 
-# In[1]:
+# In[34]:
 
 import fns
 from fns.functionsTF import *
@@ -20,64 +20,70 @@ if not os.path.exists(DIRECTORY):
 from IPython.display import clear_output, Image, display
 
 
-# In[2]:
+# In[35]:
 
 PAPER = os.path.expanduser('~/Dropbox/ICL-2014/Presentations/2016-10-11-GJ-sync-paper/figures/')
 
 
-# In[3]:
+# In[36]:
 
 plt.style.use(['seaborn-paper'])
 sns.set_context("paper", font_scale=1.5, rc={"lines.linewidth": 2.5})
 
 
-# In[7]:
+# In[52]:
 
-N, g, tauv, i, nu = 1000, 5,15,0,100
-T = 20000
+i=0
+params = []
+N = 1000
+FACT = 3
+T = 500000
+spm = False
+g = 5
+ratio = 3
+IAF = True
+WII = -1000
+WIE = -3000
+WEE = 1000
+WEI = 1000
+inE = 100
+k = 4
 
-gpu = TfSingleNet(N=N,
-                  T=T,
-                  disp=False,
-                  tauv=15,
-                  device='/gpu:0',
-                  spikeMonitor=True,
-                  g0=g,
-                  startPlast = 100,
-                  nu = nu,
-                  NUM_CORES = 1)
-# gpu.input = apple
-gpu.weight_step = 10
-gpu.input = np.concatenate([np.zeros(T//2),np.ones(T//2)*150])
-gpu.dt = 0.1
-gpu.FACT = 500
-gpu.nuI = 100
-gpu.nuE = gpu.nuI 
-gpu.ratio = 2
-gpu.ratioNI = 0.2
-gpu.wII = -1000
-gpu.wIE = -3000
-gpu.wEE = 1000
-gpu.wEI = 1000
-gpu.IAF = True
-gpu.runTFSimul()
+for nu in range(0, 100, 20):
+    for step in [10,20,50,70]:
+        i+=1
+        params.append([T, FACT, N, g, i, nu, ratio, inE, WII, k, step])
 
+nu=80
+step=70
+tauv = 15
+IAF = True
+spm = True
+ratioNI = 0.2
+NI = int(N*ratioNI)
+
+filename = "../data/stimulations/stimulation0-tauv-%d_g-%d_N-%d_T-%d_nu-%d_ratio-%.2f_WEE-%d_WEI-%d_WIE-%d_WII-%d_FACT-%d_rNI-%.2f_k-%d_IAF-%d_inE-%d_step-%d"               % (tauv, g, N, T, nu, ratio,  WEE, WEI, WIE, WII, FACT, ratioNI, k, IAF*1, inE, step)
+a = np.load(filename)
+
+filename = "../data/stimulations/raster_stimulation0-tauv-%d_g-%d_N-%d_T-%d_nu-%d_ratio-%.2f_WEE-%d_WEI-%d_WIE-%d_WII-%d_FACT-%d_rNI-%.2f_k-%d_IAF-%d_inE-%d_step-%d"               % (tauv, g, N, T, nu, ratio,  WEE, WEI, WIE, WII, FACT, ratioNI, k, IAF*1, inE, step)
+r = np.load(filename)
     
 
 
-# In[8]:
+# In[46]:
 
 def f(w=20,h=3):
     plt.figure(figsize=(w,h), linewidth=0.1)
 
 
-# In[9]:
+# In[47]:
 
 f()
-plt.plot(gpu.vvmE[10:])
+plt.plot(a['vvmE'][10:])
 plt.title('PSTH E')
-plt.figure()
-plt.plot(gpu.gamma)
+
+f()
+plt.plot(a['gamma']*NI)
 plt.title('mean gamma')
 # plt.figure()
 # plt.plot(gpu.input)
@@ -87,14 +93,20 @@ t0 = T//2 - 1000
 t1 = T//2 + 1000
 
 f()
-plt.plot(gpu.vvmE[t0:t1])
+plt.plot(a['vvmE'][t0:t1])
 plt.title('PSTH E')
 
 f()
-plt.plot(gpu.gamma[t0//gpu.weight_step:t1//gpu.weight_step])
+plt.plot(a['gamma'][t0//100:t1//100])
 plt.title('mean gamma')
 # plt.figure()
 # plt.plot(np.mean(np.array(gpu.lowsp).reshape(T,N).transpose(), axis=0))
+
+
+# In[49]:
+
+# print(r.shape)
+# plt.imshow(r)
 
 
 # In[ ]:
