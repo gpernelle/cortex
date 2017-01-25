@@ -180,7 +180,7 @@ class TfSingleNet:
         NE = self.NE
         T = self.T
         with tf.device(self.device):
-            scaling = 1 / (1 / (2 * 2 / self.dt)) ** 0.5 * 70
+            scaling = 1 / (1 / (2 * 2 / self.dt)) ** 0.5 * 80
 
             with tf.name_scope('membrane_var'):
                 # Create variables for simulation state
@@ -258,7 +258,9 @@ class TfSingleNet:
                     WIE = self.init_float([N, N], name='wie')
 
                 # plasticity learning rates
-                A_LTD_ = 2.45e-5 * self.FACT * 400 / NI
+                # A_LTD_ = 2.45e-5 * self.FACT * 400 / NI # for lowsp=1.5
+                A_LTD_ = 1.569e-5 * self.FACT * 400 / NI
+
                 A_LTD = tf.constant(A_LTD_, name="A_LTP", dtype=tf.float32)
                 A_LTP = tf.constant(self.ratio * A_LTD_, name="A_LTD", dtype=tf.float32)
 
@@ -298,9 +300,9 @@ class TfSingleNet:
                          dt / 10 * (-iChem + tf.matmul(WII + WEI, tf.to_float(vv))) + \
                          dt / 10 * (-iChem + tf.matmul(WEE + WIE, tf.to_float(vv)))
                 # current
-                iBack_ = iBack + dt / 10 * (-iBack + tf.random_normal((N, 1), mean=0.0, stddev=1.0, dtype=tf.float32,
+                iBack_ = iBack + dt / 20 * (-iBack + tf.random_normal((N, 1), mean=0.0, stddev=1.0, dtype=tf.float32,
                                                                       seed=None, name=None))
-                input_ = input[tf.to_int32(sim_index)] * vectI
+                input_ = input[tf.to_int32(sim_index)] * (vectI + 0.3*vectE)
 
                 # input to network: colored noise + external input
                 iEff_ = iBack_ * scaling + input_ + TImean * vectI + (TImean + inE) * vectE

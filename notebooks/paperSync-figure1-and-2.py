@@ -572,7 +572,7 @@ plt.plot(a['i2N2'][start:start+d])
 1
 
 
-# In[5]:
+# In[7]:
 
 df = pd.DataFrame(columns=('nu', 'g', 'T', 'N', 'f', 'p', 'burst', 'spike', 'ratio'
                           ) )

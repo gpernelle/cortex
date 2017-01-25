@@ -39,7 +39,7 @@ plt.style.use(['seaborn-paper'])
 sns.set_context("paper", font_scale=1.5, rc={"lines.linewidth": 2.5})
 
 
-# In[35]:
+# In[6]:
 
 def f(w=20,h=3):
     plt.figure(figsize=(w,h), linewidth=0.1)
@@ -93,7 +93,7 @@ c=['red', 'blue', 'black']
             
 
 
-# In[128]:
+# In[12]:
 
 def genPath(path, g,N,T, nu,ratio, WEE, WEI, WIE, WII, FACT, rNI, k, IAF, inE):
     fpath = path + '-tauv-15_g-%d_N-%d_T-%d_nu-%d_ratio-%.2f_WEE-%d_WEI-%d_WIE-%d_WII-%d_FACT-%d_rNI-%.2f_k-%d_IAF-%d_inE-%d'%(g,N,T, 
@@ -105,8 +105,8 @@ def genPath(path, g,N,T, nu,ratio, WEE, WEI, WIE, WII, FACT, rNI, k, IAF, inE):
     return fpath
 
 
-g = 5
-ratio = 3
+g = 3
+ratio = 10
 rNI=0.2
 gGap=0
 fast = 0
@@ -116,21 +116,21 @@ if fast:
     T=10000
 else:
     N=1000
-    T=10000
-FACT = 20
+    T=50000
+FACT = 50
 WEE = 1000
 WEI = 1000
 WII = -1000
-WIE = -3000
+WIE = -2000
 kmult = 4
 inE = 100
 
-path = '../data/GetGammaSteadyState/GetSteadyState250mean'
+path = '../data/GetGammaSteadyState/GetSteadyState300mean'
 c=['red', 'blue', 'black']
 f(8,6)
 ax = plt.subplot(311)
-for nu in np.arange(0,100,20):
-    for k,g in enumerate([5]):
+for nu in np.arange(0,101,20):
+    for k,g in enumerate([g]):
         filepath = genPath(path, g,N,T, nu,ratio, WEE, WEI, WIE, WII, FACT, rNI, kmult, IAF, inE)
         try:
             a = np.load(filepath)
@@ -148,8 +148,8 @@ ax = plt.subplot(312)
 ax2 = plt.subplot(313)
 nb = 30
 l = 5000
-for nu in np.arange(0,100,20):
-    for k,g in enumerate([5]):
+for nu in np.arange(0,101,10):
+    for k,g in enumerate([3]):
         filepath = genPath(path, g,N,T, nu,ratio, WEE, WEI, WIE, WII, FACT, rNI, kmult, IAF, inE)
         try:
             a = np.load(filepath)['vvmE']
@@ -176,7 +176,7 @@ plt.tight_layout()
 plt.savefig(DIRECTORY + 'weight_evol-tauv-15_g-%d_N-%d_T-%d_ratio-%.2f_WEE-%d_WEI-%d_WIE-%d_WII-%d_FACT-%d_rNI-%.2f_k-%d_IAF-%d_inE-%d.pdf'%(g,N,T,ratio, WEE, WEI, WIE, WII, FACT, rNI, kmult, IAF, inE), bbox_inches='tight')
 
 
-# In[123]:
+# In[13]:
 
 df = pd.DataFrame(columns=('nu', 'g', 'T', 'N', 'f', 'p', 'burst', 'spike', 'ratio'
                           ) )
@@ -198,7 +198,7 @@ for T in [8000]:
 
 def getDF(params):
     wII = -1000
-    wIE = -3000
+    wIE = -2000
     wEE = 1000
     wEI = 1000
     k=4
@@ -227,12 +227,12 @@ for r in res:
     df.loc[r[0]]=r[1:]
 
 
-# In[124]:
+# In[14]:
 
 df.head()
 
 
-# In[126]:
+# In[15]:
 
 cols = ['f', 'p']
 sns.set_context("paper", font_scale=1.5, rc={"lines.linewidth": 2.5})
@@ -249,26 +249,26 @@ def setLabels(fig):
 fig = plotHeatmap(df, col='ratio', y='nu', x='g', title='Mean Activity Ratio (bursts/spikes)', cmap='viridis')
 setLabels(fig)
 
-g = 5
-ratio = 3
+g = 3
+ratio = 10
 rNI=0.2
 gGap=0
 fast = 0
 IAF = 1
 N=1000
-T=10000
-FACT = 20
+T=50000
+FACT = 50
 WEE = 1000
 WEI = 1000
 WII = -1000
-WIE = -3000
+WIE = -2000
 kmult = 4
 inE = 100
 
-path = '../data/GetGammaSteadyState/GetSteadyState250mean'
+path = '../data/GetGammaSteadyState/GetSteadyState300mean'
 
 for nu in np.arange(0,100,10):
-    for k,g in enumerate([5]):
+    for k,g in enumerate([g]):
         filepath = genPath(path, g,N,T, nu,ratio, WEE, WEI, WIE, WII, FACT, rNI, kmult, IAF, inE)
         try:
             a = np.load(filepath)
@@ -284,7 +284,7 @@ setLabels(fig)
 plt.tight_layout()
 
 for nu in np.arange(0,100,10):
-    for k,g in enumerate([5]):
+    for k,g in enumerate([g]):
         filepath = genPath(path, g,N,T, nu,ratio, WEE, WEI, WIE, WII, FACT, rNI, kmult, IAF, inE)
         try:
             a = np.load(filepath)

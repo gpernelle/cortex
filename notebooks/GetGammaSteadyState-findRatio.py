@@ -6,15 +6,15 @@ nodes = 3
 i=0
 params = []
 N = 1000
-FACT = 20
-T = 10000
+FACT = 50
+T = 50000
 spm = False
-for g in [5]:
+for g in [3]:
     for k in [4]:
-        for ratio in [1,2,3,5,6,7,8]:
+        for ratio in [1,3,5,7,10]:
             for nu in range(0, 101, 10):
                 for IAF in [True]:
-                    for WII in [-1000]:
+                    for WII in [-2000]:
                         for inE in [100]:
                             i+=1
                             params.append([T, FACT, N, g, i, nu, ratio, inE, WII,k])
@@ -39,7 +39,7 @@ def runFn(things):
                       startPlast = 500,
                       ratioNI=0.2,
                       nu=nu,
-                      memfraction=0.2,)
+                      memfraction=0.3,)
     # gpu.input = apple
     gpu.ratio = ratio
     gpu.barname = 'bar %d' % i#(i, len(params))
@@ -49,19 +49,19 @@ def runFn(things):
     gpu.nuE = nu
     gpu.FACT = FACT
     gpu.k = k
-    gpu.wII = WII
-    gpu.wIE = -3000
+    gpu.wII = -1000
+    gpu.wIE = -2000
     gpu.wEE = 1000
     gpu.wEI = 1000
-    gpu.inE = inE
+    gpu.inE = 100
     gpu.weightEvolution = True
     gpu.globalGap = 0
-    gpu.IAF = IAF
+    gpu.IAF = True
 
     gpu.runTFSimul()
 
 
-    filename = "../data/GetGammaSteadyState/GetSteadyState250mean-tauv-%d_g-%d_N-%d_T-%d_nu-%d_ratio-%.2f_WEE-%d_WEI-%d_WIE-%d_WII-%d_FACT-%d_rNI-%.2f_k-%d_IAF-%d_inE-%d"\
+    filename = "../data/GetGammaSteadyState/GetSteadyState300mean-tauv-%d_g-%d_N-%d_T-%d_nu-%d_ratio-%.2f_WEE-%d_WEI-%d_WIE-%d_WII-%d_FACT-%d_rNI-%.2f_k-%d_IAF-%d_inE-%d"\
                % (tauv, g, N, T, nu, ratio,  gpu.wEE, gpu.wEI, gpu.wIE, gpu.wII, FACT, ratioNI, k, IAF*1, inE)
     with open(filename, 'wb') as f:
         np.savez(f,
@@ -77,7 +77,7 @@ def runFn(things):
                  # gvar = gpu.gammaVar
                 )
     if spm:
-        filename = "../data/GetGammaSteadyState/raster_GetSteadyState220mean-tauv-%d_g-%d_N-%d_T-%d_nu-%d_ratio-%.2f_WEE-%d_WEI-%d_WIE-%d_WII-%d_FACT-%d_rNI-%.2f_k-%d_IAF-%d_inE-%d" \
+        filename = "../data/GetGammaSteadyState/raster_GetSteadyState300mean-tauv-%d_g-%d_N-%d_T-%d_nu-%d_ratio-%.2f_WEE-%d_WEI-%d_WIE-%d_WII-%d_FACT-%d_rNI-%.2f_k-%d_IAF-%d_inE-%d" \
                    % (tauv, g, N, T, nu, ratio, gpu.wEE, gpu.wEI, gpu.wIE, gpu.wII, FACT, ratioNI, k, IAF*1, inE)
         with open(filename, 'wb') as f:
             np.save(f, gpu.raster.transpose())

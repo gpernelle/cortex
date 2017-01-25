@@ -1,11 +1,11 @@
 
 # coding: utf-8
 
-# In[10]:
+# In[1]:
 
 import fns
 from fns import *
-from fns.functionsTF import *
+from fns.functionsTFRon import *
 get_ipython().magic('matplotlib inline')
 from tqdm import tnrange, tqdm_notebook
 
@@ -24,13 +24,13 @@ output_notebook()
 from IPython.display import clear_output, Image, display
 
 
-# In[11]:
+# In[2]:
 
 def f():
     plt.figure(figsize=(20,3), linewidth=0.1)
 
 
-# In[12]:
+# In[3]:
 
 class TfSingleNet:
     def __init__(self, N=400,
@@ -426,7 +426,7 @@ class TfSingleNet:
         self.sess.close()
 
 
-# In[13]:
+# In[4]:
 
 def plotRaster(r):
     a = 17
@@ -456,10 +456,10 @@ plt.plot(x, WII - x*0.1*WII*k)
 plt.plot(x, x*0)
 
 
-# In[17]:
+# In[7]:
 
 N, g, tauv, i, nu = 1000, 5,15,0, 10
-T = 10000
+T = 1000
 inE = 100
 step=0
 ratioNI=0.2
@@ -495,7 +495,7 @@ gpu.IAF = True
 gpu.runTFSimul()
 
 
-# In[18]:
+# In[ ]:
 
 plotRaster(gpu.raster)
 # plt.xlim([T-1000,T])
@@ -547,6 +547,11 @@ plt.title('WII')
 f()
 plt.plot(gpu.pI[20:]/ratioNI)
 plt.title('burst')
+
+
+# In[18]:
+
+plt.plot(gpu.vvmERon)
 
 
 # In[601]:
